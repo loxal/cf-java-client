@@ -17,7 +17,6 @@ package org.cloudfoundry.maven;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.cloudfoundry.client.lib.CloudFoundryClient;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 
 import java.util.ArrayList;
@@ -33,15 +32,24 @@ import java.util.regex.Pattern;
  * Push and optionally start an application without forking the build to execute 'package'.
  *
  * @author Alexander Orlov
- * @goal cleanup
+ * @goal assureFallback
  * @since 1.0.4
  */
-public class Cleanup extends AbstractApplicationAwareCloudFoundryMojo {
+public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
+    private static final String BUILD_NUMBER_GROUP = "buildNumber";
+    private static final String APP_NAME_WITHOUT_BUILD_NUM_GROUP = "appNameWithoutBuildNumber";
+    private static final String APP_NAME_INFIX_REGEX = "[\\w\\d-]+-b";
 
     @Override
     protected void doExecute() throws MojoExecutionException, MojoFailureException {
         List<CloudApplication> appBuilds = getAllAppInstances();
 
+        if (!appBuilds.isEmpty()) {
+            executeGoal(appBuilds);
+        }
+    }
+
+    private void executeGoal(List<CloudApplication> appBuilds) {
         List<Integer> buildNumbers = new LinkedList<>();
         Map<Integer, CloudApplication> appBuildsAssignment = new HashMap<>();
         for (CloudApplication appBuild : appBuilds) {
@@ -50,13 +58,16 @@ public class Cleanup extends AbstractApplicationAwareCloudFoundryMojo {
             appBuildsAssignment.put(buildNumber, appBuild);
         }
 
-        Collections.sort(buildNumbers);
-        Collections.reverse(buildNumbers);
+        reverseSortBuildNumbers(buildNumbers);
 
         // should be called before deleteObsoleteBuilds, otherwise an exception occurs
         removePrimaryUrlFromRetiredBuilds(buildNumbers, appBuildsAssignment);
-
         deleteObsoleteBuilds(buildNumbers, appBuildsAssignment);
+    }
+
+    private void reverseSortBuildNumbers(List<Integer> buildNumbers) {
+        Collections.sort(buildNumbers);
+        Collections.reverse(buildNumbers);
     }
 
     private void deleteObsoleteBuilds(List<Integer> buildNumbers, Map<Integer, CloudApplication> appBuildsMap) {
@@ -68,9 +79,9 @@ public class Cleanup extends AbstractApplicationAwareCloudFoundryMojo {
 
     private void removePrimaryUrlFromRetiredBuilds(List<Integer> buildNumbers, Map<Integer, CloudApplication> appBuildsMap) {
         int idxToStartUrlRemappingFrom = 1;
-        List<Integer> buildNumbersToRemap =  buildNumbers.subList(idxToStartUrlRemappingFrom, buildNumbers.size());
+        List<Integer> buildNumbersToRemap = buildNumbers.subList(idxToStartUrlRemappingFrom, buildNumbers.size());
         for (Integer buildNum : buildNumbersToRemap) {
-            CloudApplication retiredApp =  appBuildsMap.get(buildNum);
+            CloudApplication retiredApp = appBuildsMap.get(buildNum);
             List<String> retiredAppUrls = retiredApp.getUris();
             List<String> secondaryUrlsOfRetiredApp = getSecondaryUrls(retiredAppUrls);
             updateAppUrls(retiredApp, secondaryUrlsOfRetiredApp);
@@ -78,10 +89,10 @@ public class Cleanup extends AbstractApplicationAwareCloudFoundryMojo {
     }
 
     private List<String> getSecondaryUrls(List<String> urls) {
-        Pattern ciDeployedAppName = Pattern.compile("(?<" + appNameWithoutBuildNumGroup + ">" + getArtifactId() + appNameInfixRegex + ")\\d+"); // TODO don't duplicate this
+        Pattern secondaryUrl = Pattern.compile("(?<" + APP_NAME_WITHOUT_BUILD_NUM_GROUP + ">" + getArtifactId() + APP_NAME_INFIX_REGEX + ")\\d+");
         List<String> secondaryUrls = new ArrayList<>();
         for (String url : urls) {
-            Matcher ciDeployed = ciDeployedAppName.matcher(url);
+            Matcher ciDeployed = secondaryUrl.matcher(url);
             if (ciDeployed.find()) {
                 secondaryUrls.add(url);
             }
@@ -91,22 +102,19 @@ public class Cleanup extends AbstractApplicationAwareCloudFoundryMojo {
 
     private void updateAppUrls(CloudApplication retiredApp, List<String> secondaryUrls) {
         System.out.println("Update app URLs: " + retiredApp.getName());
-        getClient().updateApplicationUris(retiredApp.getName(), secondaryUrls); // TODO make getClient() a field
+        getClient().updateApplicationUris(retiredApp.getName(), secondaryUrls);
     }
 
     private void deleteAppBuild(CloudApplication appBuild) {
         System.out.println("Delete obsolete app: " + appBuild.getName());
-        getClient().deleteApplication(appBuild.getName()); // TODO make getClient() a field
+        getClient().deleteApplication(appBuild.getName());
     }
 
-
     private List<CloudApplication> getAllAppInstances() {
-        CloudFoundryClient cfClient = getClient(); // TODO make getClient() a field
-        List<CloudApplication> applications = cfClient.getApplications();
+        List<CloudApplication> applications = getClient().getApplications();
         List<CloudApplication> appBuilds = new ArrayList<>();
         for (CloudApplication application : applications) {
-            // TODO consider renaming it to isBuildOfApp
-            if (isVersionBuildOfApp(application.getName())) {
+            if (isBuildOfApp(application.getName())) {
                 appBuilds.add(application);
             }
         }
@@ -116,33 +124,28 @@ public class Cleanup extends AbstractApplicationAwareCloudFoundryMojo {
     /**
      * TODO Using build numbers is a workaround for missing application timestamps (API insufficiency)
      * that show when an application has been deployed. So build numbers are used to infer the deployment order.
-     *
-     * @param appName
-     * @return
      */
     private int extractBuildNumber(String appName) {
-        String buildNumberGroup = "buildNumber";
-        Pattern appBuildNumber = Pattern.compile(getArtifactId() + appNameInfixRegex + "(?<" + buildNumberGroup + ">\\d+)$");
-        Matcher buildNumber = appBuildNumber.matcher(appName);
+        Matcher buildNumber = getCiDeployedAppName().matcher(appName);
 
         if (buildNumber.find()) {
-            return Integer.parseInt(buildNumber.group(buildNumberGroup));
+            return Integer.parseInt(buildNumber.group(BUILD_NUMBER_GROUP));
         } else {
             throw new NumberFormatException("App name format is not supported. A malfunction in the deployment process may have occurred.");
         }
     }
 
-    String appNameWithoutBuildNumGroup = "appNameWithoutBuildNumber";
-    String appNameInfixRegex = "[\\w\\d-]+-b";
-
-    private boolean isVersionBuildOfApp(String appName) {
-        Pattern ciDeployedAppName = Pattern.compile("(?<" + appNameWithoutBuildNumGroup + ">" + getArtifactId() + appNameInfixRegex + ")\\d+$"); // TODO don't duplicate this
-        Matcher ciDeployed = ciDeployedAppName.matcher(getAppname());
+    private boolean isBuildOfApp(String appName) {
+        Matcher ciDeployed = getCiDeployedAppName().matcher(getAppname());
         if (ciDeployed.find()) {
-            String appNameWithoutBuildNum = ciDeployed.group(appNameWithoutBuildNumGroup);
+            String appNameWithoutBuildNum = ciDeployed.group(APP_NAME_WITHOUT_BUILD_NUM_GROUP);
             return appName.startsWith(appNameWithoutBuildNum);
         } else {
             return false;
         }
+    }
+
+    private Pattern getCiDeployedAppName() {
+        return Pattern.compile("(?<" + APP_NAME_WITHOUT_BUILD_NUM_GROUP + ">" + getArtifactId() + APP_NAME_INFIX_REGEX + ")(?<" + BUILD_NUMBER_GROUP + ">\\d+)$");
     }
 }
