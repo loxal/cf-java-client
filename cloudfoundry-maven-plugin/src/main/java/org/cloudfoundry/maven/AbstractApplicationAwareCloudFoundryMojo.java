@@ -71,6 +71,13 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 	 */
 	private String appname;
 
+    /**
+     * oha
+     *
+   	 * @parameter expression="${cf.retainNumberOfBuilds}"
+   	 */
+    private Integer retainNumberOfBuilds;
+
 	/**
 	 * @parameter expression="${cf.url}"
 	 */
@@ -185,20 +192,20 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 	 */
 	private Boolean noStart;
 
-	/** 
-	 * @parameter default-value="${localRepository}" 
+	/**
+	 * @parameter default-value="${localRepository}"
 	 * @readonly
 	 * @required
 	 */
 	protected ArtifactRepository localRepository;
 
-	/** 
-	 * @parameter default-value="${project.remoteArtifactRepositories}" 
+	/**
+	 * @parameter default-value="${project.remoteArtifactRepositories}"
 	 * @readonly
 	 * @required
 	 */
 	protected java.util.List<ArtifactRepository> remoteRepositories;
-	
+
 	/**
 	* @component
 	*/
@@ -231,6 +238,11 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 		}
 
 	}
+
+    public Integer getNumberOfBuildsToRetain() {
+   		final String property = getCommandlineProperty(SystemProperties.RETAIN_NUMBER_OF_BUILDS);
+        return property == null ? this.retainNumberOfBuilds : Integer.valueOf(property);
+   	}
 
 	/**
 	 * Environment properties can only be specified from the maven pom.
@@ -341,10 +353,10 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Provides the File to deploy based on the GAV set in the "artifact" property.
-	 * 
+	 *
 	 * @return Returns null of no artifact specified.
 	 */
 	private File getArtifact() throws MojoExecutionException {

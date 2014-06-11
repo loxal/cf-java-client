@@ -64,11 +64,12 @@ public class Help extends AbstractApplicationAwareCloudFoundryMojo {
 	 * @return
 	 */
 	private Map<String, String> getParameterMap() throws MojoExecutionException {
-		final Map<String, String> parameterMap = new TreeMap<String, String>();
+		final Map<String, String> parameterMap = new TreeMap<>();
 
 		parameterMap.put("appname", getAppname() != null ? getAppname() : NOT_AVAILABLE);
 		parameterMap.put("command", getCommand() != null ? getCommand() : NOT_AVAILABLE);
 		parameterMap.put("instances", getInstances() != null ? String.valueOf(getInstances()) : NOT_AVAILABLE);
+		parameterMap.put("retainNumberOfBuilds", getNumberOfBuildsToRetain() != null ? String.valueOf(getNumberOfBuildsToRetain()) : NOT_AVAILABLE);
 		parameterMap.put("memory (in MB)", getMemory() != null ? String.valueOf(getMemory()) : NOT_AVAILABLE);
 		parameterMap.put("diskQuota (in MB)", getDiskQuota() != null ? String.valueOf(getDiskQuota()) : NOT_AVAILABLE);
 		parameterMap.put("healthCheckTimeout", getHealthCheckTimeout() != null ? String.valueOf(getHealthCheckTimeout()) : NOT_AVAILABLE);

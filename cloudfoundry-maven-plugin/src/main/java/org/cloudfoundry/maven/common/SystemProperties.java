@@ -38,6 +38,7 @@ public enum SystemProperties {
 	ORG("org"),
 	PASSWORD("password"),
 	PATH("path"),
+    RETAIN_NUMBER_OF_BUILDS("retainNumberOfBuilds"),
 	SETTINGS_SERVER("server", "server"),
 	SPACE("space"),
 	STACK("stack"),
