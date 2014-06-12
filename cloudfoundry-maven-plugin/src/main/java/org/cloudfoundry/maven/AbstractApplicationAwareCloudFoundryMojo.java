@@ -16,6 +16,29 @@
  */
 package org.cloudfoundry.maven;
 
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
+import org.apache.maven.artifact.resolver.ArtifactResolutionException;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.cloudfoundry.client.lib.CloudFoundryClient;
+import org.cloudfoundry.client.lib.CloudFoundryException;
+import org.cloudfoundry.client.lib.StartingInfo;
+import org.cloudfoundry.client.lib.domain.CloudApplication;
+import org.cloudfoundry.client.lib.domain.CloudDomain;
+import org.cloudfoundry.client.lib.domain.CloudService;
+import org.cloudfoundry.client.lib.domain.InstanceInfo;
+import org.cloudfoundry.client.lib.domain.InstanceState;
+import org.cloudfoundry.client.lib.domain.InstancesInfo;
+import org.cloudfoundry.maven.common.Assert;
+import org.cloudfoundry.maven.common.CommonUtils;
+import org.cloudfoundry.maven.common.DefaultConstants;
+import org.cloudfoundry.maven.common.SystemProperties;
+import org.codehaus.plexus.util.StringUtils;
+import org.springframework.http.HttpStatus;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,31 +47,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.cloudfoundry.client.lib.StartingInfo;
-import org.cloudfoundry.client.lib.domain.CloudApplication;
-import org.cloudfoundry.client.lib.domain.InstanceInfo;
-import org.cloudfoundry.client.lib.domain.InstanceState;
-import org.cloudfoundry.client.lib.domain.InstancesInfo;
-import org.cloudfoundry.maven.common.Assert;
-import org.cloudfoundry.client.lib.CloudFoundryClient;
-
-import org.cloudfoundry.client.lib.CloudFoundryException;
-import org.cloudfoundry.client.lib.domain.CloudDomain;
-import org.cloudfoundry.client.lib.domain.CloudService;
-
-import org.cloudfoundry.maven.common.CommonUtils;
-import org.cloudfoundry.maven.common.DefaultConstants;
-import org.cloudfoundry.maven.common.SystemProperties;
-import org.codehaus.plexus.util.StringUtils;
-import org.springframework.http.HttpStatus;
 
 /**
  * Abstract goal for the Cloud Foundry Maven plugin that bundles access to commonly
@@ -65,148 +63,127 @@ import org.springframework.http.HttpStatus;
 @SuppressWarnings("UnusedDeclaration")
 abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFoundryMojo {
 	private static final int DEFAULT_APP_STARTUP_TIMEOUT = 5;
-
 	/**
-	 * @parameter expression="${cf.appname}"
-	 */
-	private String appname;
-
+     * @parameter default-value="${localRepository}"
+     * @readonly
+     * @required
+     */
+    protected ArtifactRepository localRepository;
     /**
-     * oha
+     * @parameter default-value="${project.remoteArtifactRepositories}"
+     * @readonly
+     * @required
+     */
+    protected java.util.List<ArtifactRepository> remoteRepositories;
+    /**
+     * @parameter expression="${cf.appname}"
+     */
+    private String appname;
+    /**
+     * The number of deployed builds to retain as a fallback option.
      *
-   	 * @parameter expression="${cf.retainNumberOfBuilds}"
-   	 */
+     * @parameter expression="${cf.retainNumberOfBuilds}" default-value="1"
+     */
     private Integer retainNumberOfBuilds;
-
-	/**
-	 * @parameter expression="${cf.url}"
-	 */
-	private String url;
-
-	/**
-	 * @parameter expression="${cf.urls}"
-	 */
-	private List<String> urls;
-
-	/**
-	 * A string of the form groupId:artifactId:version:packaging[:classifier].
-	 * @parameter expression = "${cf.artifact}" default-value="${project.groupId}:${project.artifactId}:${project.version}:${project.packaging}"
-	 */
-	private String artifact;
-
-	/**
-	 * The path of one of the following:
-	 *
-	 * <ul>
-	 * 		<li>War file to deploy</li>
-	 * 		<li>Zip or Jar file to deploy</li>
-	 * 		<li>Exploded War directory</li>
-	 * 		<li>Directory containing a stand-alone application to deploy</li>
-	 * </ul>
-	 *
-	 * @parameter expression = "${cf.path}"
-	 */
-	private File path;
-
-	/**
-	 * The start command to use for the application.
-	 *
-	 * @parameter expression = "${cf.command}"
-	 */
-	private String command;
-
-	/**
-	 * The buildpack to use for the application.
-	 *
-	 * @parameter expression = "${cf.buildpack}"
-	 */
-	private String buildpack;
-
-	/**
-	 * The stack to use for the application.
-	 *
-	 * @parameter expression = "${cf.stack}"
-	 */
-	private String stack;
-
-	/**
-	 * The health check timeout to use for the application.
-	 *
-	 * @parameter expression = "${cf.healthCheckTimeout}"
-	 */
-	private Integer healthCheckTimeout;
-
-	/**
-	 * The app startup timeout to use for the application.
-	 *
-	 * @parameter expression = "${cf.appStartupTimeout}"
-	 */
-	private Integer appStartupTimeout;
-
-	/**
-	 * Set the disk quota for the application
-	 *
-	 * @parameter expression="${cf.diskQuota}"
-	 */
-	private Integer diskQuota;
-
-	/**
-	 * Set the memory reservation for the application
-	 *
-	 * @parameter expression="${cf.memory}"
-	 */
-	private Integer memory;
-
-	/**
-	 * Set the expected number <N> of instances
-	 *
-	 * @parameter expression="${cf.instances}"
-	 */
-	private Integer instances;
-
-	/**
-	 * list of services to use by the application.
-	 *
-	 * @parameter expression="${services}"
-	 */
-	private List<CloudServiceWithUserProvided> services;
-
-	/**
-	 * list of domains to use by the application.
-	 *
-	 * @parameter expression="${domains}"
-	 */
-	private List<String> domains;
-
-	/**
-	 * Environment variables
-	 *
-	 * @parameter expression="${cf.env}"
-	 */
-	private Map<String, String> env = new HashMap<String, String>();
-
-	/**
-	 * Do not auto-start the application
-	 *
-	 * @parameter expression="${cf.no-start}"
-	 */
-	private Boolean noStart;
-
-	/**
-	 * @parameter default-value="${localRepository}"
-	 * @readonly
-	 * @required
-	 */
-	protected ArtifactRepository localRepository;
-
-	/**
-	 * @parameter default-value="${project.remoteArtifactRepositories}"
-	 * @readonly
-	 * @required
-	 */
-	protected java.util.List<ArtifactRepository> remoteRepositories;
-
-	/**
+    /**
+     * @parameter expression="${cf.url}"
+     */
+    private String url;
+    /**
+     * @parameter expression="${cf.urls}"
+     */
+    private List<String> urls;
+    /**
+     * A string of the form groupId:artifactId:version:packaging[:classifier].
+     * @parameter expression = "${cf.artifact}" default-value="${project.groupId}:${project.artifactId}:${project.version}:${project.packaging}"
+     */
+    private String artifact;
+    /**
+     * The path of one of the following:
+     *
+     * <ul>
+     * 		<li>War file to deploy</li>
+     * 		<li>Zip or Jar file to deploy</li>
+     * 		<li>Exploded War directory</li>
+     * 		<li>Directory containing a stand-alone application to deploy</li>
+     * </ul>
+     *
+     * @parameter expression = "${cf.path}"
+     */
+    private File path;
+    /**
+     * The start command to use for the application.
+     *
+     * @parameter expression = "${cf.command}"
+     */
+    private String command;
+    /**
+     * The buildpack to use for the application.
+     *
+     * @parameter expression = "${cf.buildpack}"
+     */
+    private String buildpack;
+    /**
+     * The stack to use for the application.
+     *
+     * @parameter expression = "${cf.stack}"
+     */
+    private String stack;
+    /**
+     * The health check timeout to use for the application.
+     *
+     * @parameter expression = "${cf.healthCheckTimeout}"
+     */
+    private Integer healthCheckTimeout;
+    /**
+     * The app startup timeout to use for the application.
+     *
+     * @parameter expression = "${cf.appStartupTimeout}"
+     */
+    private Integer appStartupTimeout;
+    /**
+     * Set the disk quota for the application
+     *
+     * @parameter expression="${cf.diskQuota}"
+     */
+    private Integer diskQuota;
+    /**
+     * Set the memory reservation for the application
+     *
+     * @parameter expression="${cf.memory}"
+     */
+    private Integer memory;
+    /**
+     * Set the expected number <N> of instances
+     *
+     * @parameter expression="${cf.instances}"
+     */
+    private Integer instances;
+    /**
+     * list of services to use by the application.
+     *
+     * @parameter expression="${services}"
+     */
+    private List<CloudServiceWithUserProvided> services;
+    /**
+     * list of domains to use by the application.
+     *
+     * @parameter expression="${domains}"
+     */
+    private List<String> domains;
+    /**
+     * Environment variables
+     *
+     * @parameter expression="${cf.env}"
+     */
+    private Map<String, String> env = new HashMap<String, String>();
+    /**
+     * Do not auto-start the application
+     *
+     * @parameter expression="${cf.no-start}"
+     */
+    private Boolean noStart;
+    /**
 	* @component
 	*/
 	private ArtifactFactory artifactFactory;
@@ -240,7 +217,7 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 	}
 
     public Integer getNumberOfBuildsToRetain() {
-   		final String property = getCommandlineProperty(SystemProperties.RETAIN_NUMBER_OF_BUILDS);
+        final String property = getCommandlineProperty(SystemProperties.RETAIN_NUMBER_OF_BUILDS);
         return property == null ? this.retainNumberOfBuilds : Integer.valueOf(property);
    	}
 

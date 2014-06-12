@@ -60,9 +60,8 @@ public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
 
         reverseSortBuildNumbers(buildNumbers);
 
-        // should be called before deleteObsoleteBuilds, otherwise an exception occurs
-        removePrimaryUrlFromRetiredBuilds(buildNumbers, appBuildsAssignment);
         deleteObsoleteBuilds(buildNumbers, appBuildsAssignment);
+        removePrimaryUrlFromRetiredBuilds(buildNumbers, appBuildsAssignment); // should be called before deleteObsoleteBuilds
     }
 
     private void reverseSortBuildNumbers(List<Integer> buildNumbers) {
@@ -71,9 +70,11 @@ public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
     }
 
     private void deleteObsoleteBuilds(List<Integer> buildNumbers, Map<Integer, CloudApplication> appBuildsMap) {
-        List<Integer> buildsToDelete = buildNumbers.subList(getNumberOfBuildsToRetain(), buildNumbers.size());
-        for (Integer buildNum : buildsToDelete) {
-            deleteAppBuild(appBuildsMap.get(buildNum));
+        if (getNumberOfBuildsToRetain() < buildNumbers.size()) {
+            List<Integer> buildsToDelete = buildNumbers.subList(getNumberOfBuildsToRetain(), buildNumbers.size());
+            for (Integer buildNum : buildsToDelete) {
+                deleteAppBuild(appBuildsMap.get(buildNum));
+            }
         }
     }
 
@@ -89,6 +90,7 @@ public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
     }
 
     private List<String> getSecondaryUrls(List<String> urls) {
+        // TODO check whether AssureFallback#getCiDeployedAppName() could be used here
         Pattern secondaryUrl = Pattern.compile("(?<" + APP_NAME_WITHOUT_BUILD_NUM_GROUP + ">" + getArtifactId() + APP_NAME_INFIX_REGEX + ")\\d+");
         List<String> secondaryUrls = new ArrayList<>();
         for (String url : urls) {
@@ -102,7 +104,11 @@ public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
 
     private void updateAppUrls(CloudApplication retiredApp, List<String> secondaryUrls) {
         System.out.println("Update app URLs: " + retiredApp.getName());
-        getClient().updateApplicationUris(retiredApp.getName(), secondaryUrls);
+        try {
+            getClient().updateApplicationUris(retiredApp.getName(), secondaryUrls);
+        } catch (Exception e) {
+            System.out.println(String.format("An error occurred updating URLs of '%s': %s. This app might not exist anymore.", retiredApp.getName(), e.getMessage()));
+        }
     }
 
     private void deleteAppBuild(CloudApplication appBuild) {
@@ -146,6 +152,7 @@ public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
     }
 
     private Pattern getCiDeployedAppName() {
+        // TODO making this a configuration property would make this goal more generic
         return Pattern.compile("(?<" + APP_NAME_WITHOUT_BUILD_NUM_GROUP + ">" + getArtifactId() + APP_NAME_INFIX_REGEX + ")(?<" + BUILD_NUMBER_GROUP + ">\\d+)$");
     }
 }
