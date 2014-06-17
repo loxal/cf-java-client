@@ -43,7 +43,6 @@ public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
     @Override
     protected void doExecute() throws MojoExecutionException, MojoFailureException {
         List<CloudApplication> appBuilds = getAllAppInstances();
-        System.out.println("appBuilds = " + appBuilds.size());
 
         if (!appBuilds.isEmpty()) {
             executeGoal(appBuilds);
