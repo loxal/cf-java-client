@@ -43,6 +43,7 @@ public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
     @Override
     protected void doExecute() throws MojoExecutionException, MojoFailureException {
         List<CloudApplication> appBuilds = getAllAppInstances();
+        System.out.println("appBuilds = " + appBuilds.size());
 
         if (!appBuilds.isEmpty()) {
             executeGoal(appBuilds);
@@ -141,11 +142,14 @@ public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
         }
     }
 
-    private boolean isBuildOfApp(String appName) {
-        Matcher ciDeployed = getCiDeployedAppName().matcher(getAppname());
+    private boolean isBuildOfApp(String someDeployedAppName) {
+        String versionAgnosticBuildRegex = "[\\w\\d-]+-v)[\\d-]+-b";
+        String versionAgnosticAppNameWithoutBuildNumber = "versionAgnosticAppNameWithoutBuildNumber";
+        Pattern versionAgnosticBuild = Pattern.compile("(?<" + versionAgnosticAppNameWithoutBuildNumber + ">" + getArtifactId() + versionAgnosticBuildRegex + "(?<" + BUILD_NUMBER_GROUP + ">\\d+)$");
+        Matcher ciDeployed = versionAgnosticBuild.matcher(getAppname());
         if (ciDeployed.find()) {
-            String appNameWithoutBuildNum = ciDeployed.group(APP_NAME_WITHOUT_BUILD_NUM_GROUP);
-            return appName.startsWith(appNameWithoutBuildNum);
+            String appNameWithoutVersionAndBuildNumber = ciDeployed.group(versionAgnosticAppNameWithoutBuildNumber);
+            return someDeployedAppName.startsWith(appNameWithoutVersionAndBuildNumber);
         } else {
             return false;
         }
