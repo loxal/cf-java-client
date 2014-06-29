@@ -32,10 +32,10 @@ import java.util.regex.Pattern;
  * Push and optionally start an application without forking the build to execute 'package'.
  *
  * @author Alexander Orlov
- * @goal assureFallback
- * @since 1.0.4
+ * @goal delete-obsolete-builds
+ * @since 1.0.6
  */
-public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
+public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMojo {
     private static final String BUILD_NUMBER_GROUP = "buildNumber";
     private static final String APP_NAME_WITHOUT_BUILD_NUM_GROUP = "appNameWithoutBuildNumber";
     private static final String APP_NAME_INFIX_REGEX = "[\\w\\d-]+-b";
@@ -90,7 +90,7 @@ public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
     }
 
     private List<String> getSecondaryUrls(List<String> urls) {
-        // TODO check whether AssureFallback#getCiDeployedAppName() could be used here
+        // TODO check whether DeleteObsoleteBuilds#getCiDeployedAppName() could be used here
         Pattern secondaryUrl = Pattern.compile("(?<" + APP_NAME_WITHOUT_BUILD_NUM_GROUP + ">" + getArtifactId() + APP_NAME_INFIX_REGEX + ")\\d+");
         List<String> secondaryUrls = new ArrayList<>();
         for (String url : urls) {
@@ -105,6 +105,7 @@ public class AssureFallback extends AbstractApplicationAwareCloudFoundryMojo {
     private void updateAppUrls(CloudApplication retiredApp, List<String> secondaryUrls) {
         System.out.println("Update app URLs: " + retiredApp.getName());
         try {
+            // TODO might fail when application is not "started" => assure that app is "started"
             getClient().updateApplicationUris(retiredApp.getName(), secondaryUrls);
         } catch (Exception e) {
             System.out.println(String.format("An error occurred updating URLs of '%s': %s. This app might not exist anymore.", retiredApp.getName(), e.getMessage()));
