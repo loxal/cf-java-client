@@ -24,8 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Push and optionally start an application without forking the build to execute 'package'.
- *
  * @author Alexander Orlov
  * @goal orphan-route-cleanup
  * @since 1.1.5

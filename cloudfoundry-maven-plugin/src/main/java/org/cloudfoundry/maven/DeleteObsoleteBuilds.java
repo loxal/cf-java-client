@@ -29,8 +29,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Push and optionally start an application without forking the build to execute 'package'.
- *
  * @author Alexander Orlov
  * @goal delete-obsolete-builds
  * @since 1.0.6
