@@ -5,17 +5,26 @@ import org.cloudfoundry.client.lib.domain.CloudService;
 import java.util.Map;
 
 public class CloudServiceWithUserProvided extends CloudService {
-	private Map<String, Object> userProvidedCredentials;
+    private Map<String, Object> userProvidedCredentials;
+    private String syslogDrainUrl;
 
-	public CloudServiceWithUserProvided() {
-		super();
-	}
+    public CloudServiceWithUserProvided() {
+        super();
+    }
 
-	public Map<String, Object> getUserProvidedCredentials() {
-		return userProvidedCredentials;
-	}
+    public String getSyslogDrainUrl() {
+        return syslogDrainUrl;
+    }
 
-	public void setUserProvidedCredentials(Map<String, Object> userProvidedCredentials) {
-		this.userProvidedCredentials = userProvidedCredentials;
-	}
+    public void setSyslogDrainUrl(String syslogDrainUrl) {
+        this.syslogDrainUrl = syslogDrainUrl;
+    }
+
+    public Map<String, Object> getUserProvidedCredentials() {
+        return userProvidedCredentials;
+    }
+
+    public void setUserProvidedCredentials(Map<String, Object> userProvidedCredentials) {
+        this.userProvidedCredentials = userProvidedCredentials;
+    }
 }

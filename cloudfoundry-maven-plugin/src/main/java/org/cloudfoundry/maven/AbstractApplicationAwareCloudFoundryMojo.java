@@ -520,7 +520,7 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 
 	public void createServices() throws MojoExecutionException {
 		List<CloudService> currentServices = getClient().getServices();
-		List<String> currentServicesNames = new ArrayList<String>(currentServices.size());
+        List<String> currentServicesNames = new ArrayList<>(currentServices.size());
 
 		for (CloudService currentService : currentServices) {
 			currentServicesNames.add(currentService.getName());
@@ -536,9 +536,10 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 
 				try {
 					if (service.getLabel().equals("user-provided")) {
-						service.setLabel(null);
-						client.createUserProvidedService(service, service.getUserProvidedCredentials());
-					} else {
+                        // TODO bad practice to have a marker field which is reset to null?
+                        service.setLabel(null);
+                        client.createUserProvidedService(service, service.getSyslogDrainUrl(), service.getUserProvidedCredentials());
+                    } else {
 						client.createService(service);
 					}
 				} catch (CloudFoundryException e) {

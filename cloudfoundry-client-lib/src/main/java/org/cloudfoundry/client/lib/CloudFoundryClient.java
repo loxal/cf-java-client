@@ -16,13 +16,6 @@
 
 package org.cloudfoundry.client.lib;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import org.cloudfoundry.client.lib.archive.ApplicationArchive;
 import org.cloudfoundry.client.lib.domain.ApplicationLog;
 import org.cloudfoundry.client.lib.domain.ApplicationStats;
@@ -45,6 +38,13 @@ import org.cloudfoundry.client.lib.rest.CloudControllerClientFactory;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.util.Assert;
 import org.springframework.web.client.ResponseErrorHandler;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * A Java client to exercise the Cloud Foundry API.
@@ -241,9 +241,9 @@ public class CloudFoundryClient implements CloudFoundryOperations {
 		cc.createService(service);
 	}
 
-	public void createUserProvidedService(CloudService service, Map<String, Object> credentials) {
-		cc.createUserProvidedService(service, credentials);
-	}
+    public void createUserProvidedService(CloudService service, String syslogDrainUrl, Map<String, Object> credentials) {
+        cc.createUserProvidedService(service, syslogDrainUrl, credentials);
+    }
 
 	public void uploadApplication(String appName, String file) throws IOException {
 		cc.uploadApplication(appName, new File(file), null);
