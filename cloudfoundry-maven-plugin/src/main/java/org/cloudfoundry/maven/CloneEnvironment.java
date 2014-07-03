@@ -21,7 +21,6 @@ import org.apache.maven.plugin.MojoFailureException;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * @author Alexander Orlov
@@ -29,10 +28,13 @@ import java.util.logging.Logger;
  * @since 1.1.7
  */
 public class CloneEnvironment extends AbstractApplicationAwareCloudFoundryMojo {
-    private static final Logger LOG = Logger.getLogger(CloneEnvironment.class.getName());
 
-    // TODO this is a hack based on Java's reflection API
-    private static void updateLocalEnvironment(Map<String, String> additionalEnv) {
+    /**
+     * A pragmatic way to modify environment variables as there is no simple cross-platform way to set env vars.
+     *
+     * @param additionalEnv
+     */
+    private void updateLocalEnvironment(Map<String, String> additionalEnv) {
         try {
             Class[] classes = Collections.class.getDeclaredClasses();
             Map<String, String> env = System.getenv();
@@ -46,7 +48,7 @@ public class CloneEnvironment extends AbstractApplicationAwareCloudFoundryMojo {
                 }
             }
         } catch (Exception e) {
-            LOG.severe(e.getMessage());
+            getLog().error(e.getMessage());
         }
     }
 
