@@ -1,23 +1,23 @@
 package org.cloudfoundry.client.lib.rest;
 
+import org.cloudfoundry.client.lib.StreamingLogToken;
+
+import javax.websocket.Session;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.websocket.Session;
-
-import org.cloudfoundry.client.lib.StreamingLogToken;
-
 public class StreamingLogTokenImpl implements StreamingLogToken {
-    private static long keepAliveTime = 25000; // 25 seconds to match the go client
-    
+    // The Go client uses 25 seconds which is not sufficient for some cases
+    private static final long KEEP_ALIVE_TIME = 3 * 25000;
+
     private Timer keepAliveTimer = new Timer(true);
 
     private Session session;
 
     public StreamingLogTokenImpl(Session session) {
         this.session = session;
-                
-        keepAliveTimer.scheduleAtFixedRate(new KeepAliveTimerTask(), keepAliveTime, keepAliveTime);
+
+        keepAliveTimer.scheduleAtFixedRate(new KeepAliveTimerTask(), KEEP_ALIVE_TIME, KEEP_ALIVE_TIME);
     }
     
     public void cancel() {
