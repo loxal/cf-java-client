@@ -15,22 +15,18 @@
  */
 package org.cloudfoundry.maven;
 
-import java.io.File;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.maven.plugin.MojoExecutionException;
-
 import org.cloudfoundry.client.lib.CloudFoundryException;
-
 import org.cloudfoundry.client.lib.StartingInfo;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudService;
 import org.cloudfoundry.client.lib.domain.Staging;
-
 import org.springframework.http.HttpStatus;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Push and optionally start an application.
@@ -94,8 +90,8 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 		try {
 			uploadApplication(getClient(), path, appname);
 		} catch (CloudFoundryException e) {
-			throw new MojoExecutionException(String.format("Error while creating application '%s'. Error message: '%s'. Description: '%s'",
-					getAppname(), e.getMessage(), e.getDescription()), e);
+            throw new MojoExecutionException(String.format("Error while uploading application '%s'. Error message: '%s'. Description: '%s'",
+                    getAppname(), e.getMessage(), e.getDescription()), e);
 		}
 
 		if (instances != null) {
@@ -120,8 +116,8 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 				showStartingStatus(app);
 				showStartResults(app, uris);
 			} catch (CloudFoundryException e) {
-				throw new MojoExecutionException(String.format("Error while creating application '%s'. Error message: '%s'. Description: '%s'",
-						getAppname(), e.getMessage(), e.getDescription()), e);
+                throw new MojoExecutionException(String.format("Error while starting application '%s'. Error message: '%s'. Description: '%s'",
+                        getAppname(), e.getMessage(), e.getDescription()), e);
 			}
 		}
 	}
