@@ -16,55 +16,53 @@
 package org.cloudfoundry.maven.common;
 
 /**
- *
  * @author Gunnar Hillert
  * @author Stephan Oudmaijer
  * @author Scott Frederick
- *
  * @since 1.0.0
- *
  */
 public enum SystemProperties {
 
-	APP_NAME("appname"),
-	APP_STARTUP_TIMEOUT("appStartupTimeout"),
-	COMMAND("command"),
-	BUILDPACK("buildpack"),
-	DISK_QUOTA("diskQuota"),
-	HEALTH_CHECK_TIMEOUT("healthCheckTimeout"),
-	INSTANCES("instances"),
-	MEMORY("memory"),
-	NO_START("no-start"),
-	ORG("org"),
-	PASSWORD("password"),
-	PATH("path"),
+    APP_ID_PREFIX("appIdPrefix"),
+    APP_NAME("appname"),
+    APP_STARTUP_TIMEOUT("appStartupTimeout"),
+    COMMAND("command"),
+    BUILDPACK("buildpack"),
+    DISK_QUOTA("diskQuota"),
+    HEALTH_CHECK_TIMEOUT("healthCheckTimeout"),
+    INSTANCES("instances"),
+    MEMORY("memory"),
+    NO_START("no-start"),
+    ORG("org"),
+    PASSWORD("password"),
+    PATH("path"),
     RETAIN_NUMBER_OF_BUILDS("retainNumberOfBuilds"),
-	SETTINGS_SERVER("server", "server"),
-	SPACE("space"),
-	STACK("stack"),
-	TARGET("target"),
-	URL("url"),
-	USERNAME("username");
+    SETTINGS_SERVER("server", "server"),
+    SPACE("space"),
+    STACK("stack"),
+    TARGET("target"),
+    URL("url"),
+    USERNAME("username");
 
-	private String property;
-	private String xmlElement;
+    private String property;
+    private String xmlElement;
 
-	private SystemProperties(String xmlElement) {
-		this.property = "cf." + xmlElement;
-		this.xmlElement = xmlElement;
-	}
+    private SystemProperties(String xmlElement) {
+        this.property = "cf." + xmlElement;
+        this.xmlElement = xmlElement;
+    }
 
-	private SystemProperties(String property, String xmlElement) {
-		this.property = property;
-		this.xmlElement = xmlElement;
-	}
+    private SystemProperties(String property, String xmlElement) {
+        this.property = property;
+        this.xmlElement = xmlElement;
+    }
 
-	public String getProperty() {
-		return property;
-	}
+    public String getProperty() {
+        return property;
+    }
 
-	public String getXmlElement() {
-		return xmlElement;
-	}
+    public String getXmlElement() {
+        return xmlElement;
+    }
 
 }

@@ -89,7 +89,7 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
 
     private List<String> getSecondaryUrls(List<String> urls) {
         // TODO check whether DeleteObsoleteBuilds#getCiDeployedAppName() could be used here
-        Pattern secondaryUrl = Pattern.compile("(?<" + APP_NAME_WITHOUT_BUILD_NUM_GROUP + ">" + getArtifactId() + APP_NAME_INFIX_REGEX + ")\\d+");
+        Pattern secondaryUrl = Pattern.compile("(?<" + APP_NAME_WITHOUT_BUILD_NUM_GROUP + ">" + getAppIdPrefix() + APP_NAME_INFIX_REGEX + ")\\d+");
         List<String> secondaryUrls = new ArrayList<>();
         for (String url : urls) {
             Matcher ciDeployed = secondaryUrl.matcher(url);
@@ -127,7 +127,7 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
     }
 
     /**
-     * TODO Using build numbers is a workaround for missing application timestamps (API insufficiency)
+     * TODO Using build numbers is a workaround for missing application timestamps (CF v2 API insufficiency)
      * that show when an application has been deployed. So build numbers are used to infer the deployment order.
      */
     private int extractBuildNumber(String appName) {
@@ -143,7 +143,7 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
     private boolean isBuildOfApp(String someDeployedAppName) {
         String versionAgnosticBuildRegex = "[\\w\\d-]+-v)[\\d-]+-b";
         String versionAgnosticAppNameWithoutBuildNumber = "versionAgnosticAppNameWithoutBuildNumber";
-        Pattern versionAgnosticBuild = Pattern.compile("(?<" + versionAgnosticAppNameWithoutBuildNumber + ">" + getArtifactId() + versionAgnosticBuildRegex + "(?<" + BUILD_NUMBER_GROUP + ">\\d+)$");
+        Pattern versionAgnosticBuild = Pattern.compile("(?<" + versionAgnosticAppNameWithoutBuildNumber + ">" + getAppIdPrefix() + versionAgnosticBuildRegex + "(?<" + BUILD_NUMBER_GROUP + ">\\d+)$");
         Matcher ciDeployed = versionAgnosticBuild.matcher(getAppname());
         if (ciDeployed.find()) {
             String appNameWithoutVersionAndBuildNumber = ciDeployed.group(versionAgnosticAppNameWithoutBuildNumber);
@@ -155,6 +155,6 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
 
     private Pattern getCiDeployedAppName() {
         // TODO making this a configuration property would make this goal more generic
-        return Pattern.compile("(?<" + APP_NAME_WITHOUT_BUILD_NUM_GROUP + ">" + getArtifactId() + APP_NAME_INFIX_REGEX + ")(?<" + BUILD_NUMBER_GROUP + ">\\d+)$");
+        return Pattern.compile("(?<" + APP_NAME_WITHOUT_BUILD_NUM_GROUP + ">" + getAppIdPrefix() + APP_NAME_INFIX_REGEX + ")(?<" + BUILD_NUMBER_GROUP + ">\\d+)$");
     }
 }
