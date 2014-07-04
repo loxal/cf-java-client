@@ -215,6 +215,10 @@ public class CloudFoundryClient implements CloudFoundryOperations {
 		return cc.getApplications();
 	}
 
+    public void deleteOrphanRoutes() {
+        cc.deleteOrphanRoutes();
+    }
+
 	public CloudApplication getApplication(String appName) {
 		return cc.getApplication(appName);
 	}

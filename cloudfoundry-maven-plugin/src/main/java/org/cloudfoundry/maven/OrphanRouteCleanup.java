@@ -17,13 +17,10 @@ package org.cloudfoundry.maven;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.cloudfoundry.client.lib.domain.CloudDomain;
-import org.cloudfoundry.client.lib.domain.CloudRoute;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
+ * Delete routes that do not have an application assigned.
+ *
  * @author Alexander Orlov
  * @goal orphan-route-cleanup
  * @since 1.1.5
@@ -31,38 +28,6 @@ import java.util.List;
 public class OrphanRouteCleanup extends AbstractApplicationAwareCloudFoundryMojo {
     @Override
     protected void doExecute() throws MojoExecutionException, MojoFailureException {
-        List<CloudRoute> orphanRoutes = new ArrayList<>();
-        for (CloudDomain cloudDomain : fetchOrgDomains()) {
-            orphanRoutes.addAll(fetchOrphanRoutes(cloudDomain.getName()));
-        }
-
-        for (CloudRoute orphanRoute : orphanRoutes) {
-            deleteRoute(orphanRoute.getHost(), orphanRoute.getDomain());
-        }
-    }
-
-    private void deleteRoute(String host, CloudDomain domain) {
-        System.out.printf("Delete route: %s.%s\n", host, domain.getName());
-        getClient().deleteRoute(host, domain.getName());
-    }
-
-    private List<CloudDomain> fetchOrgDomains() {
-        return getClient().getDomainsForOrg();
-    }
-
-
-    private List<CloudRoute> fetchOrphanRoutes(String domainName) {
-        List<CloudRoute> orphanRoutes = new ArrayList<>();
-        for (CloudRoute cloudRoute : getClient().getRoutes(domainName)) {
-            if (isOrphanRoute(cloudRoute)) {
-                orphanRoutes.add(cloudRoute);
-            }
-        }
-
-        return orphanRoutes;
-    }
-
-    private boolean isOrphanRoute(CloudRoute cloudRoute) {
-        return cloudRoute.getAppsUsingRoute() == 0;
+        getClient().deleteOrphanRoutes();
     }
 }
