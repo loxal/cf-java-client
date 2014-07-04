@@ -141,7 +141,7 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
     }
 
     private boolean isBuildOfApp(String someDeployedAppName) {
-        String versionAgnosticBuildRegex = "[\\w\\d-]+-v)[\\d-]+-b";
+        String versionAgnosticBuildRegex = "[\\w\\d-]*-v)[\\d-]+-b";
         String versionAgnosticAppNameWithoutBuildNumber = "versionAgnosticAppNameWithoutBuildNumber";
         Pattern versionAgnosticBuild = Pattern.compile("(?<" + versionAgnosticAppNameWithoutBuildNumber + ">" + getAppIdPrefix() + versionAgnosticBuildRegex + "(?<" + BUILD_NUMBER_GROUP + ">\\d+)$");
         Matcher ciDeployed = versionAgnosticBuild.matcher(getAppname());
