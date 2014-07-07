@@ -23,6 +23,9 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
+ * Sets all environment variables that are specified in the <env/> section of the configuration as environment variables
+ * that are valid within the spawned Maven process only.
+ *
  * @author Alexander Orlov
  * @goal clone-env
  * @since 1.1.7
@@ -32,7 +35,7 @@ public class CloneEnvironment extends AbstractApplicationAwareCloudFoundryMojo {
     /**
      * A pragmatic way to modify environment variables as there is no simple cross-platform way to set env vars.
      *
-     * @param additionalEnv
+     * @param additionalEnv environment variables from <env/> section of the plugin configuration
      */
     private void updateLocalEnvironment(Map<String, String> additionalEnv) {
         try {
