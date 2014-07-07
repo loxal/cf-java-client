@@ -267,26 +267,20 @@ public class CloudControllerClientImpl implements CloudControllerClient {
      * Delete routes that do not have an application assigned.
      */
     @Override
-    public void deleteOrphanRoutes() {
+    public List<CloudRoute> deleteOrphanRoutes() {
         List<CloudRoute> orphanRoutes = new ArrayList<>();
-        for (CloudDomain cloudDomain : fetchOrgDomains()) {
+        for (CloudDomain cloudDomain : getDomainsForOrg()) {
             orphanRoutes.addAll(fetchOrphanRoutes(cloudDomain.getName()));
         }
 
+        List<CloudRoute> deletedCloudRoutes = new ArrayList<>();
         for (CloudRoute orphanRoute : orphanRoutes) {
-            deleteRoute(orphanRoute.getHost(), orphanRoute.getDomain());
+            deleteRoute(orphanRoute.getHost(), orphanRoute.getDomain().getName());
+            deletedCloudRoutes.add(orphanRoute);
         }
-    }
 
-    private void deleteRoute(String host, CloudDomain domain) {
-        System.out.printf("Delete route: %s.%s\n", host, domain.getName());
-        deleteRoute(host, domain.getName());
+        return deletedCloudRoutes;
     }
-
-    private List<CloudDomain> fetchOrgDomains() {
-        return getDomainsForOrg();
-    }
-
 
     private List<CloudRoute> fetchOrphanRoutes(String domainName) {
         List<CloudRoute> orphanRoutes = new ArrayList<>();
