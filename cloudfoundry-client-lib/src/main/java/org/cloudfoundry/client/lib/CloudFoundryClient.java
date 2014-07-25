@@ -215,10 +215,6 @@ public class CloudFoundryClient implements CloudFoundryOperations {
 		return cc.getApplications();
 	}
 
-    public void deleteOrphanRoutes() {
-        cc.deleteOrphanRoutes();
-    }
-
 	public CloudApplication getApplication(String appName) {
 		return cc.getApplication(appName);
 	}
@@ -245,9 +241,20 @@ public class CloudFoundryClient implements CloudFoundryOperations {
 		cc.createService(service);
 	}
 
-    public void createUserProvidedService(CloudService service, String syslogDrainUrl, Map<String, Object> credentials) {
-        cc.createUserProvidedService(service, syslogDrainUrl, credentials);
-    }
+	@Override
+	public void createUserProvidedService(CloudService service, Map<String, Object> credentials, String syslogDrainUrl) {
+		cc.createUserProvidedService(service, credentials, syslogDrainUrl);
+	}
+
+	@Override
+	public void createUserProvidedService(CloudService service, Map<String, Object> credentials) {
+		cc.createUserProvidedService(service, credentials);
+	}
+
+	@Override
+	public void deleteOrphanedRoutes() {
+		cc.deleteOrphanedRoutes();
+	}
 
 	public void uploadApplication(String appName, String file) throws IOException {
 		cc.uploadApplication(appName, new File(file), null);

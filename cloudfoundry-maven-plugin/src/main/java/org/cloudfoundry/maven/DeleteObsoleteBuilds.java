@@ -36,7 +36,8 @@ import java.util.regex.Pattern;
 public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMojo {
     private static final String BUILD_NUMBER_GROUP = "buildNumber";
     private static final String APP_NAME_WITHOUT_BUILD_NUM_GROUP = "appNameWithoutBuildNumber";
-    private static final String APP_NAME_INFIX_REGEX = "[\\w\\d-]+-b";
+	private static final String SNAPSHOT_RELEASE_OPTION = "(-SNAPSHOT|-RELEASE)";
+	private static final String APP_NAME_INFIX_REGEX = "[\\w\\d-\\.]+" + SNAPSHOT_RELEASE_OPTION + "?-b";
 
     @Override
     protected void doExecute() throws MojoExecutionException, MojoFailureException {
@@ -141,8 +142,8 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
     }
 
     private boolean isBuildOfApp(String someDeployedAppName) {
-        String versionAgnosticBuildRegex = "[\\w\\d-]*-v)[\\d-]+-b";
-        String versionAgnosticAppNameWithoutBuildNumber = "versionAgnosticAppNameWithoutBuildNumber";
+		String versionAgnosticBuildRegex = "[\\w\\d-\\.]*-v)[\\d-]+" + SNAPSHOT_RELEASE_OPTION + "?-b";
+		String versionAgnosticAppNameWithoutBuildNumber = "versionAgnosticAppNameWithoutBuildNumber";
         Pattern versionAgnosticBuild = Pattern.compile("(?<" + versionAgnosticAppNameWithoutBuildNumber + ">" + getAppIdPrefix() + versionAgnosticBuildRegex + "(?<" + BUILD_NUMBER_GROUP + ">\\d+)$");
         Matcher ciDeployed = versionAgnosticBuild.matcher(getAppname());
         if (ciDeployed.find()) {

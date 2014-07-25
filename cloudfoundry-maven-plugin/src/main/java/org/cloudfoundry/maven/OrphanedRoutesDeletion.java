@@ -19,15 +19,15 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
 /**
- * Delete routes that do not have an application assigned.
+ * Delete routes that do not have any application which is assigned to them.
  *
  * @author Alexander Orlov
- * @goal orphan-route-cleanup
- * @since 1.1.5
+ * @goal delete-orphaned-routes
+ * @since 1.0.4
  */
-public class OrphanRouteCleanup extends AbstractApplicationAwareCloudFoundryMojo {
-    @Override
-    protected void doExecute() throws MojoExecutionException, MojoFailureException {
-        getClient().deleteOrphanRoutes();
-    }
+public class OrphanedRoutesDeletion extends AbstractApplicationAwareCloudFoundryMojo {
+	@Override
+	protected void doExecute() throws MojoExecutionException, MojoFailureException {
+		getClient().deleteOrphanedRoutes();
+	}
 }

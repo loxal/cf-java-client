@@ -90,7 +90,7 @@ public interface CloudFoundryOperations {
 	/**
 	 * Register new user account with the provided credentials.
 	 *
-	 * @param email the email account
+	 * @param email    the email account
 	 * @param password the password
 	 */
 	void register(String email, String password);
@@ -154,14 +154,14 @@ public interface CloudFoundryOperations {
 	/**
 	 * Create application.
 	 *
-	 * @param appName application name
-	 * @param staging staging info
-	 * @param memory memory to use in MB
-	 * @param uris list of URIs for the app
+	 * @param appName      application name
+	 * @param staging      staging info
+	 * @param memory       memory to use in MB
+	 * @param uris         list of URIs for the app
 	 * @param serviceNames list of service names to bind to app
 	 */
 	void createApplication(String appName, Staging staging, Integer memory, List<String> uris,
-                           List<String> serviceNames);
+						   List<String> serviceNames);
 
 	/**
 	 * Create application.
@@ -174,7 +174,7 @@ public interface CloudFoundryOperations {
 	 * @param serviceNames list of service names to bind to app
 	 */
 	public void createApplication(String appName, Staging staging, Integer disk, Integer memory, List<String> uris,
-	                              List<String> serviceNames);
+								  List<String> serviceNames);
 
 	/**
 	 * Create a service.
@@ -185,33 +185,49 @@ public interface CloudFoundryOperations {
 
 	/**
 	 * Create a user-provided service.
-     * @param service cloud service info
-     * @param syslogDrainUrl points to a syslog URL
-     * @param credentials the user-provided service credentials
-     */
-    void createUserProvidedService(CloudService service, String syslogDrainUrl, Map<String, Object> credentials);
+	 *
+	 * @param service     cloud service info
+	 * @param credentials the user-provided service credentials
+	 */
+	void createUserProvidedService(CloudService service, Map<String, Object> credentials);
+
+	/**
+	 * Create a user-provided service.
+	 *
+	 * @param service        cloud service info
+	 * @param credentials    the user-provided service credentials
+	 * @param syslogDrainUrl points to a syslog URL
+	 */
+	void createUserProvidedService(CloudService service, Map<String, Object> credentials, String syslogDrainUrl);
+
+	/**
+	 * Delete routes that do not have any application which is assigned to them.
+	 */
+	void deleteOrphanedRoutes();
 
 	/**
 	 * Upload an application.
 	 *
 	 * @param appName application name
-	 * @param file path to the application archive or folder
+	 * @param file    path to the application archive or folder
 	 * @throws java.io.IOException
 	 */
 	void uploadApplication(String appName, String file) throws IOException;
 
 	/**
 	 * Upload an application to cloud foundry.
+	 *
 	 * @param appName the application name
-	 * @param file the application archive or folder
+	 * @param file    the application archive or folder
 	 * @throws java.io.IOException
 	 */
 	void uploadApplication(String appName, File file) throws IOException;
 
 	/**
 	 * Upload an application to cloud foundry.
-	 * @param appName the application name
-	 * @param file the application archive
+	 *
+	 * @param appName  the application name
+	 * @param file     the application archive
 	 * @param callback a callback interface used to provide progress information or <tt>null</tt>
 	 * @throws java.io.IOException
 	 */
@@ -219,6 +235,7 @@ public interface CloudFoundryOperations {
 
 	/**
 	 * Upload an application to cloud foundry.
+	 *
 	 * @param appName the application name
 	 * @param archive the application archive
 	 * @throws java.io.IOException
@@ -227,8 +244,9 @@ public interface CloudFoundryOperations {
 
 	/**
 	 * Upload an application to cloud foundry.
-	 * @param appName the application name
-	 * @param archive the application archive
+	 *
+	 * @param appName  the application name
+	 * @param archive  the application archive
 	 * @param callback a callback interface used to provide progress information or <tt>null</tt>
 	 * @throws java.io.IOException
 	 */
@@ -238,8 +256,7 @@ public interface CloudFoundryOperations {
 	 * Start application. May return starting info if the response obtained after the start request contains headers.
 	 * If the response does not contain headers, null is returned instead.
 	 *
-	 * @param appName
-	 *            name of application
+	 * @param appName name of application
 	 * @return Starting info containing response headers, if headers are present in the response. If there are no headers, return null.
 	 */
 	StartingInfo startApplication(String appName);
@@ -248,7 +265,7 @@ public interface CloudFoundryOperations {
 	 * Debug application.
 	 *
 	 * @param appName name of application
-	 * @param mode debug mode info
+	 * @param mode    debug mode info
 	 */
 	void debugApplication(String appName, CloudApplication.DebugMode mode);
 
@@ -287,7 +304,7 @@ public interface CloudFoundryOperations {
 	 * Update application disk quota.
 	 *
 	 * @param appName name of application
-	 * @param disk new disk setting in MB
+	 * @param disk    new disk setting in MB
 	 */
 	void updateApplicationDiskQuota(String appName, int disk);
 
@@ -295,14 +312,14 @@ public interface CloudFoundryOperations {
 	 * Update application memory.
 	 *
 	 * @param appName name of application
-	 * @param memory new memory setting in MB
+	 * @param memory  new memory setting in MB
 	 */
 	void updateApplicationMemory(String appName, int memory);
 
 	/**
 	 * Update application instances.
 	 *
-	 * @param appName name of application
+	 * @param appName   name of application
 	 * @param instances number of instances to use
 	 */
 	void updateApplicationInstances(String appName, int instances);
@@ -310,7 +327,7 @@ public interface CloudFoundryOperations {
 	/**
 	 * Update application services.
 	 *
-	 * @param appName name of appplication
+	 * @param appName  name of appplication
 	 * @param services list of services that should be bound to app
 	 */
 	void updateApplicationServices(String appName, List<String> services);
@@ -327,7 +344,7 @@ public interface CloudFoundryOperations {
 	 * Update application URIs.
 	 *
 	 * @param appName name of application
-	 * @param uris list of URIs the app should use
+	 * @param uris    list of URIs the app should use
 	 */
 	void updateApplicationUris(String appName, List<String> uris);
 
@@ -336,7 +353,7 @@ public interface CloudFoundryOperations {
 	 * and the value the value of the environment variable..
 	 *
 	 * @param appName name of application
-	 * @param env map of environment settings
+	 * @param env     map of environment settings
 	 */
 	void updateApplicationEnv(String appName, Map<String, String> env);
 
@@ -344,7 +361,7 @@ public interface CloudFoundryOperations {
 	 * Update application env using a list of strings each with one environment setting.
 	 *
 	 * @param appName name of application
-	 * @param env list of environment settings
+	 * @param env     list of environment settings
 	 */
 	void updateApplicationEnv(String appName, List<String> env);
 
@@ -353,28 +370,29 @@ public interface CloudFoundryOperations {
 	 * Get logs from the deployed application. The logs
 	 * will be returned in a Map keyed by the path of the log file
 	 * (logs/stderr.log, logs/stdout.log).
+	 *
 	 * @param appName name of the application
 	 * @return a Map containing the logs. The logs will be returned with the path to the log file used as the key and
 	 * the full content of the log file will be returned as a String value for the corresponding key.
 	 * @deprecated Use {@link #streamLogs(String, ApplicationLogListener)} or {@link #getRecentLogs(String)}
 	 */
 	Map<String, String> getLogs(String appName);
-	
+
 	/**
 	 * Stream application logs produced <em>after</em> this method is called.
-	 * 
+	 * <p/>
 	 * This method has 'tail'-like behavior. Every time there is a new log entry,
 	 * it notifies the listener.
-	 * 
-	 * @param appName the name of the application
+	 *
+	 * @param appName  the name of the application
 	 * @param listener listener object to be notified
 	 * @return token than can be used to cancel listening for logs
 	 */
 	StreamingLogToken streamLogs(String appName, ApplicationLogListener listener);
-	
+
 	/**
 	 * Stream recent log entries.
-	 * 
+	 * <p/>
 	 * Stream logs that were recently produced for an app.
 	 *
 	 * @param appName the name of the application
@@ -393,20 +411,18 @@ public interface CloudFoundryOperations {
 	 * @deprecated Use {@link #streamLogs(String, ApplicationLogListener)} or {@link #getRecentLogs(String)}
 	 */
 	Map<String, String> getCrashLogs(String appName);
-	
+
 	/**
 	 * Get the staging log while an application is starting. A null
 	 * value indicates that no further checks for staging logs should occur as
 	 * staging logs are no longer available.
-	 * 
-	 * @param info
-	 *            starting information containing staging log file URL. Obtained
-	 *            after starting an application.
-	 * @param offset
-	 *            starting position from where content should be retrieved.
+	 *
+	 * @param info   starting information containing staging log file URL. Obtained
+	 *               after starting an application.
+	 * @param offset starting position from where content should be retrieved.
 	 * @return portion of the staging log content starting from the offset. It
-	 *         may contain multiple lines. Returns null if no further content is
-	 *         available.
+	 * may contain multiple lines. Returns null if no further content is
+	 * available.
 	 */
 	String getStagingLogs(StartingInfo info, int offset);
 
@@ -429,9 +445,9 @@ public interface CloudFoundryOperations {
 	/**
 	 * Get file from the deployed application.
 	 *
-	 * @param appName name of the application
+	 * @param appName       name of the application
 	 * @param instanceIndex instance index
-	 * @param filePath path to the file
+	 * @param filePath      path to the file
 	 * @return the contents of the file
 	 */
 	String getFile(String appName, int instanceIndex, String filePath);
@@ -439,9 +455,9 @@ public interface CloudFoundryOperations {
 	/**
 	 * Get a the content, starting at a specific position, of a file from the deployed application.
 	 *
-	 * @param appName name of the application
+	 * @param appName       name of the application
 	 * @param instanceIndex instance index
-	 * @param filePath path to the file
+	 * @param filePath      path to the file
 	 * @param startPosition the starting position of the file contents (inclusive)
 	 * @return the contents of the file
 	 */
@@ -451,11 +467,11 @@ public interface CloudFoundryOperations {
 	 * Get a range of content of a file from the deployed application. The range begins at the specified startPosition
 	 * and extends to the character at endPosition - 1.
 	 *
-	 * @param appName name of the application
+	 * @param appName       name of the application
 	 * @param instanceIndex instance index
-	 * @param filePath path to the file
+	 * @param filePath      path to the file
 	 * @param startPosition the starting position of the file contents (inclusive)
-	 * @param endPosition the ending position of the file contents (exclusive)
+	 * @param endPosition   the ending position of the file contents (exclusive)
 	 * @return the contents of the file
 	 */
 	String getFile(String appName, int instanceIndex, String filePath, int startPosition, int endPosition);
@@ -463,10 +479,10 @@ public interface CloudFoundryOperations {
 	/**
 	 * Get a the last bytes, with length as specified, of content of a file from the deployed application.
 	 *
-	 * @param appName name of the application
+	 * @param appName       name of the application
 	 * @param instanceIndex instance index
-	 * @param filePath path to the file
-	 * @param length the length of the file contents to retrieve
+	 * @param filePath      path to the file
+	 * @param length        the length of the file contents to retrieve
 	 * @return the contents of the file
 	 */
 	String getFileTail(String appName, int instanceIndex, String filePath, int length);
@@ -510,14 +526,15 @@ public interface CloudFoundryOperations {
 	/**
 	 * Associate (provision) a service with an application.
 	 *
-	 * @param appName the application name
+	 * @param appName     the application name
 	 * @param serviceName the service name
 	 */
 	void bindService(String appName, String serviceName);
 
 	/**
 	 * Un-associate (unprovision) a service from an application.
-	 * @param appName the application name
+	 *
+	 * @param appName     the application name
 	 * @param serviceName the service name
 	 */
 	void unbindService(String appName, String serviceName);
@@ -540,6 +557,7 @@ public interface CloudFoundryOperations {
 
 	/**
 	 * Get crashes info for application.
+	 *
 	 * @param appName name of application
 	 * @return crashes info
 	 */
@@ -621,7 +639,7 @@ public interface CloudFoundryOperations {
 	/**
 	 * Register a new route to the a domain.
 	 *
-	 * @param host the host of the route to register
+	 * @param host       the host of the route to register
 	 * @param domainName the domain of the route to register
 	 */
 	void addRoute(String host, String domainName);
@@ -629,7 +647,7 @@ public interface CloudFoundryOperations {
 	/**
 	 * Delete a registered route from the space of the current session.
 	 *
-	 * @param host the host of the route to delete
+	 * @param host       the host of the route to delete
 	 * @param domainName the domain of the route to delete
 	 */
 	void deleteRoute(String host, String domainName);
