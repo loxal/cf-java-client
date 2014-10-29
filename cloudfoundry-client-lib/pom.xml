@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 	<groupId>org.cloudfoundry</groupId>
 	<artifactId>cloudfoundry-client-lib</artifactId>
-    <version>1.2.5.KIWI-RELEASE</version>
-    <packaging>jar</packaging>
+	<version>1.0.5.BUILD-SNAPSHOT</version>
+	<packaging>jar</packaging>
 	<name>Cloud Foundry Java Client Library</name>
 	<description>A Cloud Foundry client library for Java</description>
 	<url>http://github.com/cloudfoundry/cf-java-client</url>
@@ -109,6 +109,13 @@
 											<type>war</type>
 											<outputDirectory>${project.build.directory}/generated-test-resources</outputDirectory>
 										</artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.cloudfoundry.test</groupId>
+                                            <artifactId>haash-broker</artifactId>
+                                            <version>0.1.0.BUILD-SNAPSHOT</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${project.build.directory}/generated-test-resources</outputDirectory>
+                                        </artifactItem>
 									</artifactItems>
 									<stripVersion>true</stripVersion>
 								</configuration>

@@ -30,6 +30,7 @@ import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudDomain;
 import org.cloudfoundry.client.lib.domain.CloudInfo;
 import org.cloudfoundry.client.lib.domain.CloudOrganization;
+import org.cloudfoundry.client.lib.domain.CloudQuota;
 import org.cloudfoundry.client.lib.domain.CloudRoute;
 import org.cloudfoundry.client.lib.domain.CloudService;
 import org.cloudfoundry.client.lib.domain.CloudServiceBroker;
@@ -100,7 +101,17 @@ public interface CloudControllerClient {
 
 	List<CloudServiceBroker> getServiceBrokers();
 
-	// App methods
+    CloudServiceBroker getServiceBroker(String name);
+
+    void createServiceBroker(CloudServiceBroker serviceBroker);
+
+    void updateServiceBroker(CloudServiceBroker serviceBroker);
+
+    void deleteServiceBroker(String name);
+
+    void updateServicePlanVisibilityForBroker(String name, boolean visibility);
+
+    // App methods
 
 	List<CloudApplication> getApplications();
 
@@ -203,11 +214,26 @@ public interface CloudControllerClient {
 
 	void deleteRoute(String host, String domainName);
 
+	List<CloudRoute> deleteOrphanedRoutes();
+
 	// Misc. utility methods
 
 	void registerRestLogListener(RestLogCallback callBack);
 
 	void unRegisterRestLogListener(RestLogCallback callBack);
 
-	List<CloudRoute> deleteOrphanedRoutes();
+    // Quota operations
+	CloudOrganization getOrgByName(String orgName, boolean required);
+    
+    List<CloudQuota> getQuotas();
+    
+    CloudQuota getQuotaByName(String quotaName, boolean required);
+    
+    void createQuota(CloudQuota quota);
+    
+    void updateQuota(CloudQuota quota, String name);
+    
+    void deleteQuota(String quotaName);
+    
+    void setQuotaToOrg(String orgName, String quotaName);
 }

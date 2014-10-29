@@ -1,6 +1,8 @@
 package org.cloudfoundry.client.lib.rest;
 
-import org.cloudfoundry.client.lib.StreamingLogToken;
+import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.websocket.Session;
 import java.util.Timer;
@@ -22,6 +24,11 @@ public class StreamingLogTokenImpl implements StreamingLogToken {
     
     public void cancel() {
         keepAliveTimer.cancel();
+        try {
+            session.close();
+        } catch (IOException e) {
+            // Ignore
+        }
     }
 
     private class KeepAliveTimerTask extends TimerTask {

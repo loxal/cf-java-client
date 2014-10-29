@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.cloudfoundry.maven;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.cloudfoundry.client.lib.domain.CloudRoute;
+
+import java.util.List;
 
 /**
  * Delete routes that do not have any application which is assigned to them.
@@ -28,6 +32,10 @@ import org.apache.maven.plugin.MojoFailureException;
 public class OrphanedRoutesDeletion extends AbstractApplicationAwareCloudFoundryMojo {
 	@Override
 	protected void doExecute() throws MojoExecutionException, MojoFailureException {
-		getClient().deleteOrphanedRoutes();
+		getLog().info("Getting routes");
+		List<CloudRoute> routes = getClient().deleteOrphanedRoutes();
+		for (CloudRoute route : routes) {
+			getLog().info(String.format("Deleted route '%s'", route.getName()));
+		}
 	}
 }
