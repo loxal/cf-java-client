@@ -1,10 +1,9 @@
 package org.cloudfoundry.client.lib.rest;
 
-import java.io.IOException;
-import java.util.Timer;
-import java.util.TimerTask;
+import org.cloudfoundry.client.lib.StreamingLogToken;
 
 import javax.websocket.Session;
+import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 

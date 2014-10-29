@@ -103,7 +103,6 @@ import static org.junit.Assume.assumeTrue;
 @RunWith(BMUnitRunner.class)
 @BMScript(value = "trace", dir = "target/test-classes")
 public class CloudFoundryClientTest {
-	public static final int STARTUP_TIMEOUT = Integer.getInteger("ccng.startup.timeout", 60000);
 	// Pass -Dccng.target=http://api.cloudfoundry.com, vcap.me, or your own cloud -- must point to a v2 cloud controller
 	private static final String CCNG_API_URL = System.getProperty("ccng.target", "http://api.run.pivotal.io");
 
@@ -142,14 +141,11 @@ public class CloudFoundryClientTest {
 	private static int inJvmProxyPort;
 	private static AtomicInteger nbInJvmProxyRcvReqs;
 
-	private static final int DEFAULT_MEMORY = 512; // MB
 	private static final int DEFAULT_DISK = 1024; // MB
 
 	private static final int FIVE_MINUTES = 300 * 1000;
 	
 	private static final String CCNG_QUOTA_NAME_TEST = System.getProperty("ccng.quota", "test_quota");
-
-	private static boolean tearDownComplete = false;
 
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -176,22 +172,9 @@ public class CloudFoundryClientTest {
 			}
 		}
 	};
-	private static final boolean SKIP_INJVM_PROXY = Boolean.getBoolean("http.skipInJvmProxy");
 	private static final int DEFAULT_MEMORY = 512; // MB
-	private static final int DEFAULT_DISK = 1024; // MB
-	private static final int FIVE_MINUTES = 300 * 1000;
-	private static String defaultDomainName = null;
-	private static HttpProxyConfiguration httpProxyConfiguration;
-	private static Server inJvmProxyServer;
-	private static int inJvmProxyPort;
-	private static AtomicInteger nbInJvmProxyRcvReqs;
 	private static boolean tearDownComplete = false;
 
-	@Rule
-	public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 	private CloudFoundryClient connectedClient;
 
 	@BeforeClass

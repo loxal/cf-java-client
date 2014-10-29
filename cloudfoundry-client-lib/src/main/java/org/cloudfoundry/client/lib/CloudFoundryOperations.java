@@ -185,6 +185,8 @@ public interface CloudFoundryOperations {
 	 */
 	void createService(CloudService service);
 
+	void createUserProvidedService(CloudService service, Map<String, Object> credentials, String syslogDrainUrl);
+
 	/**
 	 * Create a user-provided service.
 	 *
