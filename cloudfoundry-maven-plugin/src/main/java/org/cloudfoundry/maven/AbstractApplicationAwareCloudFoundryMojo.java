@@ -546,7 +546,7 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 					if (service.getLabel().equals("user-provided")) {
 						// TODO bad practice to have a marker field which is reset to null?
 						service.setLabel(null);
-						client.createUserProvidedService(service, service.getUserProvidedCredentials(), service.getSyslogDrainUrl());
+						client.createUserProvidedService(service, service.getUserProvidedCredentials());
 					} else {
 						client.createService(service);
 					}
