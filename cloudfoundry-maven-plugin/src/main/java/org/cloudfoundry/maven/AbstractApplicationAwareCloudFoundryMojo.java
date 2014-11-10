@@ -16,6 +16,7 @@
  */
 package org.cloudfoundry.maven;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -250,7 +251,7 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 	}
 
 	/**
-	 * If the application name was specified via the command line ({@link SystemProperties})
+	 * If the URL was specified via the command line ({@link SystemProperties})
 	 * then that property is used. Otherwise return the appname.
 	 *
 	 * @return Returns the Cloud Foundry application url.
@@ -733,18 +734,32 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 		}
 		return count;
 	}
+	
+	private List<String> replaceRandomWords(List<String> uris) {
+	  List<String> finalUris = new ArrayList<String>(uris.size());
+	  for(String uri : uris) {
+	    if(uri.contains("${randomWord}")) {
+	      finalUris.add(uri.replace("${randomWord}", RandomStringUtils.randomAlphabetic(5)));
+	    } else {
+	      finalUris.add(uri);
+	    }
+	  }
+	  return finalUris;
+	}
 
 	protected List<String> getAllUris() throws MojoExecutionException {
 		Assert.configurationUrls(getUrl(), getUrls());
-
+		List<String> uris;
 		if (getUrl() != null) {
-			return Arrays.asList(getUrl());
+			uris = Arrays.asList(getUrl());
 		} else if (!getUrls().isEmpty()) {
-			return getUrls();
+			uris = getUrls();
 		} else {
 			String defaultUri = getAppname() + "." + getClient().getDefaultDomain().getName();
-			return Arrays.asList(defaultUri);
+			uris = Arrays.asList(defaultUri);
 		}
+		
+	  return replaceRandomWords(uris);
 	}
 
 	private long getAppStartupExpiry() {
