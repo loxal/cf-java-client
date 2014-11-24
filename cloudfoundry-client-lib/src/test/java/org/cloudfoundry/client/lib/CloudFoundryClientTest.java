@@ -41,7 +41,6 @@ import org.cloudfoundry.client.lib.domain.CloudDomain;
 import org.cloudfoundry.client.lib.domain.CloudEntity;
 import org.cloudfoundry.client.lib.domain.CloudInfo;
 import org.cloudfoundry.client.lib.domain.CloudOrganization;
-import org.cloudfoundry.client.lib.domain.CloudQuota;
 import org.cloudfoundry.client.lib.domain.CloudRoute;
 import org.cloudfoundry.client.lib.domain.CloudService;
 import org.cloudfoundry.client.lib.domain.CloudServiceBroker;
@@ -90,6 +89,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;
+import org.cloudfoundry.client.lib.domain.CloudQuota;
 
 /**
  * Note that this integration tests rely on other methods working correctly, so these tests aren't
@@ -102,8 +102,10 @@ import org.springframework.web.client.RestTemplate;
  * @author Thomas Risberg
  */
 @RunWith(BMUnitRunner.class)
-@BMScript(value = "trace", dir = "target/test-classes")
+@BMScript(value="trace", dir="target/test-classes")
 public class CloudFoundryClientTest {
+	private CloudFoundryClient connectedClient;
+
 	// Pass -Dccng.target=http://api.cloudfoundry.com, vcap.me, or your own cloud -- must point to a v2 cloud controller
 	private static final String CCNG_API_URL = System.getProperty("ccng.target", "http://api.run.pivotal.io");
 
@@ -118,12 +120,19 @@ public class CloudFoundryClientTest {
 	private static final boolean CCNG_API_SSL = Boolean.getBoolean("ccng.ssl");
 
 	private static final String CCNG_USER_EMAIL = System.getProperty("ccng.email", "java-authenticatedClient-test-user@vmware.com");
-	private static final String TEST_NAMESPACE = System.getProperty("vcap.test.namespace", defaultNamespace(CCNG_USER_EMAIL));
-	private static final String TEST_DOMAIN = System.getProperty("vcap.test.domain", defaultNamespace(CCNG_USER_EMAIL) + ".com");
+
 	private static final String CCNG_USER_PASS = System.getProperty("ccng.passwd");
+
 	private static final boolean CCNG_USER_IS_ADMIN = Boolean.getBoolean("ccng.admin");
+
 	private static final String CCNG_USER_ORG = System.getProperty("ccng.org", "gopivotal.com");
+
 	private static final String CCNG_USER_SPACE = System.getProperty("ccng.space", "test");
+
+	private static final String TEST_NAMESPACE = System.getProperty("vcap.test.namespace", defaultNamespace(CCNG_USER_EMAIL));
+
+	private static final  String TEST_DOMAIN = System.getProperty("vcap.test.domain", defaultNamespace(CCNG_USER_EMAIL) + ".com");
+
 	private static final String MYSQL_SERVICE_LABEL = System.getProperty("vcap.mysql.label", "p-mysql");
 	private static final String MYSQL_SERVICE_PLAN = System.getProperty("vcap.mysql.plan", "100mb-dev");
 
@@ -142,11 +151,14 @@ public class CloudFoundryClientTest {
 	private static int inJvmProxyPort;
 	private static AtomicInteger nbInJvmProxyRcvReqs;
 
+	private static final int DEFAULT_MEMORY = 512; // MB
 	private static final int DEFAULT_DISK = 1024; // MB
 
 	private static final int FIVE_MINUTES = 300 * 1000;
 	
 	private static final String CCNG_QUOTA_NAME_TEST = System.getProperty("ccng.quota", "test_quota");
+
+	private static boolean tearDownComplete = false;
 
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -173,15 +185,11 @@ public class CloudFoundryClientTest {
 			}
 		}
 	};
-	private static final int DEFAULT_MEMORY = 512; // MB
-	private static boolean tearDownComplete = false;
-
-	private CloudFoundryClient connectedClient;
 
 	@BeforeClass
 	public static void beforeClass() throws Exception {
 		System.out.println("Running tests on " + CCNG_API_URL + " on behalf of " + CCNG_USER_EMAIL);
-		System.out.println("Using space " + CCNG_USER_SPACE + " of organization " + CCNG_USER_ORG);
+		System.out.println("Using space " + CCNG_USER_SPACE + " of organization " + CCNG_USER_ORG );
 		if (CCNG_USER_PASS == null) {
 			fail("System property ccng.passwd must be specified, supply -Dccng.passwd=<password>");
 		}
@@ -205,58 +213,6 @@ public class CloudFoundryClientTest {
 			inJvmProxyServer.stop();
 			nbInJvmProxyRcvReqs.set(0);
 		}
-	}
-
-	private static int getNextAvailablePort(int initial) {
-		int current = initial;
-		while (!PortAvailability.available(current)) {
-			current++;
-			if (current - initial > 100) {
-				throw new RuntimeException("did not find an available port from " + initial + " up to:" + current);
-			}
-		}
-		return current;
-	}
-
-	/**
-	 * To test that the CF client is able to go through a proxy, we point the CC client to a broken url
-	 * that can only be resolved by going through an inJVM proxy which rewrites the URI.
-	 * This method starts this inJvm proxy.
-	 *
-	 * @throws Exception
-	 */
-	private static void startInJvmProxy() throws Exception {
-		inJvmProxyPort = getNextAvailablePort(8080);
-		inJvmProxyServer = new Server(new InetSocketAddress("127.0.0.1", inJvmProxyPort)); //forcing use of loopback that will be used both for Httpclient proxy and SocketDestHelper
-		QueuedThreadPool threadPool = new QueuedThreadPool();
-		threadPool.setMinThreads(1);
-		inJvmProxyServer.setThreadPool(threadPool);
-
-		HandlerCollection handlers = new HandlerCollection();
-		inJvmProxyServer.setHandler(handlers);
-
-		ServletHandler servletHandler = new ServletHandler();
-		handlers.addHandler(servletHandler);
-		nbInJvmProxyRcvReqs = new AtomicInteger();
-		ChainedProxyServlet chainedProxyServlet = new ChainedProxyServlet(httpProxyConfiguration, nbInJvmProxyRcvReqs);
-		servletHandler.addServletWithMapping(new ServletHolder(chainedProxyServlet), "/*");
-
-		// Setup proxy handler to handle CONNECT methods
-		ConnectHandler proxyHandler;
-		proxyHandler = new ChainedProxyConnectHandler(httpProxyConfiguration, nbInJvmProxyRcvReqs);
-		handlers.addHandler(proxyHandler);
-
-		inJvmProxyServer.start();
-	}
-
-	private static String defaultNamespace(String email) {
-		String s;
-		if (email.contains("@")) {
-			s = email.substring(0, email.indexOf('@'));
-		} else {
-			s = email;
-		}
-		return s.replaceAll("\\.", "-").replaceAll("\\+", "-");
 	}
 
 	@Before
@@ -296,6 +252,7 @@ public class CloudFoundryClientTest {
 		}
 		tearDownComplete = true;
 	}
+
 
 	@Test
 	public void infoAvailable() throws Exception {
@@ -346,7 +303,7 @@ public class CloudFoundryClientTest {
 
 		assertTrue(SocketDestHelper.isActivated());
 		assertFalse("expected some installed rules, got:" + SocketDestHelper.getInstalledRules(), SocketDestHelper.getInstalledRules().isEmpty());
-	}
+   }
 
 	private void assertNetworkCallFails(RestTemplate restTemplate, ClientHttpRequestFactory requestFactory) {
 		restTemplate.setRequestFactory(requestFactory);
@@ -364,16 +321,55 @@ public class CloudFoundryClientTest {
 		assertEquals("Not expecting Jetty to receive requests since we asked direct connections", 0, nbInJvmProxyRcvReqs.get());
 	}
 
+
+	private static int getNextAvailablePort(int initial) {
+		int current = initial;
+		while (! PortAvailability.available(current)) {
+			current ++;
+			if (current - initial > 100) {
+				throw new RuntimeException("did not find an available port from " + initial + " up to:" + current);
+			}
+		}
+		return current;
+	}
+
+	/**
+	 * To test that the CF client is able to go through a proxy, we point the CC client to a broken url
+	 * that can only be resolved by going through an inJVM proxy which rewrites the URI.
+	 * This method starts this inJvm proxy.
+	 * @throws Exception
+	 */
+	private static void startInJvmProxy() throws Exception {
+		inJvmProxyPort = getNextAvailablePort(8080);
+		inJvmProxyServer = new Server(new InetSocketAddress("127.0.0.1", inJvmProxyPort)); //forcing use of loopback that will be used both for Httpclient proxy and SocketDestHelper
+		QueuedThreadPool threadPool = new QueuedThreadPool();
+		threadPool.setMinThreads(1);
+		inJvmProxyServer.setThreadPool(threadPool);
+
+		HandlerCollection handlers = new HandlerCollection();
+		inJvmProxyServer.setHandler(handlers);
+
+		ServletHandler servletHandler = new ServletHandler();
+		handlers.addHandler(servletHandler);
+		nbInJvmProxyRcvReqs = new AtomicInteger();
+		ChainedProxyServlet chainedProxyServlet = new ChainedProxyServlet(httpProxyConfiguration, nbInJvmProxyRcvReqs);
+		servletHandler.addServletWithMapping(new ServletHolder(chainedProxyServlet), "/*");
+
+		// Setup proxy handler to handle CONNECT methods
+		ConnectHandler proxyHandler;
+		proxyHandler = new ChainedProxyConnectHandler(httpProxyConfiguration, nbInJvmProxyRcvReqs);
+		handlers.addHandler(proxyHandler);
+
+		inJvmProxyServer.start();
+	}
+
+
 	@Test
 	public void spacesAvailable() throws Exception {
 		List<CloudSpace> spaces = connectedClient.getSpaces();
 		assertNotNull(spaces);
 		assertTrue(spaces.size() > 0);
 	}
-
-	//
-	// Basic Application tests
-	//
 
 	@Test
 	public void orgsAvailable() throws Exception {
@@ -382,11 +378,15 @@ public class CloudFoundryClientTest {
 		assertTrue(orgs.size() > 0);
 	}
 
+	//
+	// Basic Application tests
+	//
+
 	@Test
 	public void createApplication() {
 		String appName = namespacedAppName("travel_test-0");
 		List<String> uris = Arrays.asList(computeAppUrl(appName));
-		Staging staging = new Staging();
+		Staging staging =  new Staging();
 		connectedClient.createApplication(appName, staging, DEFAULT_MEMORY, uris, null);
 		CloudApplication app = connectedClient.getApplication(appName);
 		assertNotNull(app);
@@ -446,7 +446,7 @@ public class CloudFoundryClientTest {
 		connectedClient.addDomain(TEST_DOMAIN);
 		List<String> uris = Arrays.asList(TEST_DOMAIN);
 
-		Staging staging = new Staging();
+		Staging staging =  new Staging();
 		connectedClient.createApplication(appName, staging, DEFAULT_MEMORY, uris, null);
 		CloudApplication app = connectedClient.getApplication(appName);
 		assertNotNull(app);
@@ -543,10 +543,6 @@ public class CloudFoundryClientTest {
 		assertEquals(CloudApplication.AppState.STOPPED, app.getState());
 	}
 
-	//
-	// App configuration tests
-	//
-
 	@Test
 	public void paginationWorksForUris() throws IOException {
 		String appName = namespacedAppName("page-url1");
@@ -569,6 +565,10 @@ public class CloudFoundryClientTest {
 			assertTrue("Missing URI: " + uri, appUris.contains(uri));
 		}
 	}
+
+	//
+	// App configuration tests
+	//
 
 	@Test
 	public void setEnvironmentThroughList() throws IOException {
@@ -658,11 +658,6 @@ public class CloudFoundryClientTest {
 		assertEquals(1, app.getInstances());
 	}
 
-
-	//
-	// Advanced Application tests
-	//
-
 	@Test
 	public void updateApplicationUris() throws IOException {
 		String appName = namespacedAppName("updateUris");
@@ -685,6 +680,11 @@ public class CloudFoundryClientTest {
 		app = connectedClient.getApplication(appName);
 		assertEquals(originalUris, app.getUris());
 	}
+
+
+	//
+	// Advanced Application tests
+	//
 
 	@Test
 	public void uploadStandaloneApplication() throws IOException {
@@ -981,7 +981,7 @@ public class CloudFoundryClientTest {
 	@Test
 	public void getStacks() throws Exception {
 		List<CloudStack> stacks = connectedClient.getStacks();
-		assert (stacks.size() >= 1);
+		assert(stacks.size() >= 1);
 
 		CloudStack stack = null;
 		for (CloudStack s : stacks) {
@@ -995,10 +995,6 @@ public class CloudFoundryClientTest {
 		assertNotNull(stack.getDescription());
 	}
 
-	//
-	// Files and Log tests
-	//
-
 	@Test
 	public void getStack() throws Exception {
 		CloudStack stack = connectedClient.getStack(DEFAULT_STACK_NAME);
@@ -1007,6 +1003,10 @@ public class CloudFoundryClientTest {
 		assertEquals(DEFAULT_STACK_NAME, stack.getName());
 		assertNotNull(stack.getDescription());
 	}
+
+	//
+	// Files and Log tests
+	//
 
 	@Test
 	public void getLogs() throws Exception {
@@ -1020,7 +1020,7 @@ public class CloudFoundryClientTest {
 		assertNotNull(logs);
 		assertTrue(logs.size() > 0);
 	}
-
+	
 	@Test
 	public void streamLogs() throws Exception {
 		// disable proxy validation for this test, since Loggregator websockets
@@ -1101,10 +1101,6 @@ public class CloudFoundryClientTest {
 		doGetFile(connectedClient, appName);
 	}
 
-	//
-	// Basic Services tests
-	//
-
 	@Test
 	public void openFile() throws Exception {
 		String appName = namespacedAppName("simple_openFile");
@@ -1113,6 +1109,10 @@ public class CloudFoundryClientTest {
 		assertTrue("App failed to start", running);
 		doOpenFile(connectedClient, appName);
 	}
+
+	//
+	// Basic Services tests
+	//
 
 	@Test
 	public void getServiceOfferings() {
@@ -1328,16 +1328,16 @@ public class CloudFoundryClientTest {
 		assertServicesEqual(expectedService, service);
 	}
 
-	//
-	// Application and Services tests
-	//
-
 	private void assertServicesEqual(CloudService expectedService, CloudService service) {
 		assertEquals(expectedService.getName(), service.getName());
 		assertEquals(expectedService.getLabel(), service.getLabel());
 		assertEquals(expectedService.getPlan(), service.getPlan());
 		assertEquals(expectedService.isUserProvided(), service.isUserProvided());
 	}
+
+	//
+	// Application and Services tests
+	//
 
 	@Test
 	public void createApplicationWithService() throws IOException {
@@ -1467,15 +1467,11 @@ public class CloudFoundryClientTest {
 		try {
 			connectedClient.deleteDomain(TEST_DOMAIN);
 			fail("should have thrown exception");
-		} catch (IllegalStateException ex) {
+		}
+		catch (IllegalStateException ex) {
 			assertTrue(ex.getMessage().contains("in use"));
 		}
 	}
-
-
-	//
-	// Configuration/Metadata tests
-	//
 
 	@Test
 	public void deleteOrphanedRoutes() {
@@ -1519,6 +1515,11 @@ public class CloudFoundryClientTest {
 		assertEquals(1, getRouteWithHost(appName, defaultDomainRoutes).getAppsUsingRoute());
 		assertTrue(getRouteWithHost(appName, defaultDomainRoutes).inUse());
 	}
+
+
+	//
+	// Configuration/Metadata tests
+	//
 
 	@Test
 	public void infoAvailableWithoutLoggingIn() throws Exception {
@@ -1572,7 +1573,7 @@ public class CloudFoundryClientTest {
 		// The current token expiration time is 10 minutes. If we can still make authenticated calls past that,
 		// then the transparent token refresh scheme working as expected.
 		for (int i = 0; i < 30; i++) {
-			System.out.println("Elapsed time since the last login (at least) " + i / 2 + " minutes");
+			System.out.println("Elapsed time since the last login (at least) " + i/2 + " minutes");
 			getServiceOfferings();
 			Thread.sleep(30 * 1000);
 		}
@@ -1603,10 +1604,6 @@ public class CloudFoundryClientTest {
 		connectedClient.deleteAllApplications();
 		assertTrue(log1.size() > log2.size());
 	}
-
-	//
-	// Shared test methods
-	//
 
 	@Test
 	public void getStagingLogs() throws Exception {
@@ -1787,10 +1784,6 @@ public class CloudFoundryClientTest {
 
 	}
 
-	//
-	// Helper methods
-	//
-
 	private void doGetFile(CloudFoundryClient client, String appName) throws Exception {
 		String appDir = "app";
 		String fileName = appDir + "/WEB-INF/web.xml";
@@ -1813,7 +1806,7 @@ public class CloudFoundryClientTest {
 
 		// Test downloading range of file with start and end position
 		int end = fileContent.length() - 3;
-		int start = end / 2;
+		int start = end/2;
 		String fileContent2 = client.getFile(appName, 0, fileName, start, end);
 		assertEquals(fileContent.substring(start, end), fileContent2);
 
@@ -1882,6 +1875,10 @@ public class CloudFoundryClientTest {
 		}
 	}
 
+	//
+	// Helper methods
+	//
+
 	private CloudApplication createAndUploadSimpleTestApp(String name) throws IOException {
 		createAndUploadSimpleSpringApp(name);
 		return connectedClient.getApplication(name);
@@ -1889,6 +1886,16 @@ public class CloudFoundryClientTest {
 
 	private String namespacedAppName(String basename) {
 		return TEST_NAMESPACE + "-" + basename;
+	}
+
+	private static String defaultNamespace(String email) {
+		String s;
+		if(email.contains("@")) {
+			s = email.substring(0, email.indexOf('@'));
+		} else {
+			s = email;
+		}
+		return s.replaceAll("\\.", "-").replaceAll("\\+", "-");
 	}
 
 	//
@@ -2012,14 +2019,12 @@ public class CloudFoundryClientTest {
 	private CloudService createUserProvidedService(String serviceName) {
 		CloudService service = new CloudService(CloudEntity.Meta.defaultMeta(), serviceName);
 
-		String syslogDrainUrl = "syslog://log.example.com:5000";
-
-		Map<String, Object> credentials = new HashMap<>();
+		Map<String, Object> credentials = new HashMap<String, Object>();
 		credentials.put("host", "example.com");
 		credentials.put("port", 1234);
 		credentials.put("user", "me");
 
-		connectedClient.createUserProvidedService(service, credentials, syslogDrainUrl);
+		connectedClient.createUserProvidedService(service, credentials);
 
 		return service;
 	}
@@ -2112,7 +2117,7 @@ public class CloudFoundryClientTest {
 	}
 
 	private static class NonUnsubscribingUploadStatusCallback extends NoOpUploadStatusCallback {
-		public int progressCount = 0;
+	    public int progressCount = 0;
 
 		public boolean onProgress(String status) {
 			progressCount++;
