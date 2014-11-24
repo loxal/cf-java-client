@@ -48,10 +48,6 @@ import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.util.Assert;
 import org.springframework.web.client.ResponseErrorHandler;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.UUID;
-
 /**
  * A Java client to exercise the Cloud Foundry API.
  *
