@@ -15,6 +15,11 @@
  */
 package org.cloudfoundry.maven;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.cloudfoundry.client.lib.CloudFoundryException;
 import org.cloudfoundry.client.lib.StartingInfo;
@@ -22,11 +27,6 @@ import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudService;
 import org.cloudfoundry.client.lib.domain.Staging;
 import org.springframework.http.HttpStatus;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Push and optionally start an application.
@@ -61,16 +61,16 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 		createServices();
 
 		getLog().debug(String.format(
-				"Pushing App - Appname: %s," +
-						" Command: %s," +
-						" Env: %s," +
-						" Instances: %s," +
-						" Memory: %s," +
-						" DiskQuota: %s," +
-						" Path: %s," +
-						" Services: %s," +
-						" Uris: %s,",
-				appname, command, env, instances, memory, disk, path, serviceNames, uris));
+			"Pushing App - Appname: %s," +
+				" Command: %s," +
+				" Env: %s," +
+				" Instances: %s," +
+				" Memory: %s," +
+				" DiskQuota: %s," +
+				" Path: %s," +
+				" Services: %s," +
+				" Uris: %s,",
+			appname, command, env, instances, memory, disk, path, serviceNames, uris));
 
 		getLog().info(String.format("Creating application '%s'", appname));
 
@@ -82,7 +82,7 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 			getClient().updateApplicationEnv(appname, env);
 		} catch (CloudFoundryException e) {
 			throw new MojoExecutionException(String.format("Error while updating application env '%s'. Error message: '%s'. Description: '%s'",
-					getAppname(), e.getMessage(), e.getDescription()), e);
+				getAppname(), e.getMessage(), e.getDescription()), e);
 		}
 
 		getLog().info(String.format("Uploading '%s'", path));
@@ -90,8 +90,8 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 		try {
 			uploadApplication(getClient(), path, appname);
 		} catch (CloudFoundryException e) {
-            throw new MojoExecutionException(String.format("Error while uploading application '%s'. Error message: '%s'. Description: '%s'",
-                    getAppname(), e.getMessage(), e.getDescription()), e);
+			throw new MojoExecutionException(String.format("Error while uploading application '%s'. Error message: '%s'. Description: '%s'",
+				getAppname(), e.getMessage(), e.getDescription()), e);
 		}
 
 		if (instances != null) {
@@ -101,7 +101,7 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 				getClient().updateApplicationInstances(appname, instances);
 			} catch (CloudFoundryException e) {
 				throw new MojoExecutionException(String.format("Error while setting number of instances for application '%s'. Error message: '%s'. Description: '%s'",
-						getAppname(), e.getMessage(), e.getDescription()), e);
+					getAppname(), e.getMessage(), e.getDescription()), e);
 			}
 		}
 
@@ -116,14 +116,14 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 				showStartingStatus(app);
 				showStartResults(app, uris);
 			} catch (CloudFoundryException e) {
-                throw new MojoExecutionException(String.format("Error while starting application '%s'. Error message: '%s'. Description: '%s'",
-                        getAppname(), e.getMessage(), e.getDescription()), e);
+				throw new MojoExecutionException(String.format("Error while starting application '%s'. Error message: '%s'. Description: '%s'",
+					getAppname(), e.getMessage(), e.getDescription()), e);
 			}
 		}
 	}
 
 	private void createApplication(String appname, String command, String buildpack, String stack, Integer healthCheckTimeout,
-								   Integer diskQuota, Integer memory, List<String> uris, List<String> serviceNames) throws MojoExecutionException {
+				       Integer diskQuota, Integer memory, List<String> uris, List<String> serviceNames) throws MojoExecutionException {
 		boolean found;
 		try {
 			getClient().getApplication(appname);
@@ -133,7 +133,7 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 				found = false;
 			} else {
 				throw new MojoExecutionException(String.format("Error while checking for existing application '%s'. Error message: '%s'. Description: '%s'",
-						appname, e.getMessage(), e.getDescription()), e);
+					appname, e.getMessage(), e.getDescription()), e);
 			}
 		}
 
@@ -155,7 +155,7 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 			}
 		} catch (CloudFoundryException e) {
 			throw new MojoExecutionException(String.format("Error while creating application '%s'. Error message: '%s'. Description: '%s'",
-					getAppname(), e.getMessage(), e.getDescription()), e);
+				getAppname(), e.getMessage(), e.getDescription()), e);
 		}
 	}
 
