@@ -211,11 +211,7 @@ public interface CloudFoundryOperations {
 	void uploadApplication(String appName, String file) throws IOException;
 
 	/**
-<<<<<<< HEAD
-	 * Upload an application to cloud foundry.
-=======
 	 * Upload an application to Cloud Foundry.
->>>>>>> 6b33707b431354f93ae58766946443b53f683d0c
 	 *
 	 * @param appName the application name
 	 * @param file    the application archive or folder
@@ -224,26 +220,16 @@ public interface CloudFoundryOperations {
 	void uploadApplication(String appName, File file) throws IOException;
 
 	/**
-<<<<<<< HEAD
-	 * Upload an application to cloud foundry.
-	 *
-	 * @param appName  the application name
-	 * @param file     the application archive
-=======
 	 * Upload an application to Cloud Foundry.
 	 *
 	 * @param appName the application name
 	 * @param file the application archive
->>>>>>> 6b33707b431354f93ae58766946443b53f683d0c
 	 * @param callback a callback interface used to provide progress information or <tt>null</tt>
 	 * @throws java.io.IOException
 	 */
 	void uploadApplication(String appName, File file, UploadStatusCallback callback) throws IOException;
 
 	/**
-<<<<<<< HEAD
-	 * Upload an application to cloud foundry.
-=======
 	 * Upload an application to Cloud Foundry.
 	 *
 	 * This form of <tt>uploadApplication</tt> will read the passed <tt>InputStream</tt> and copy the contents to a
@@ -272,7 +258,6 @@ public interface CloudFoundryOperations {
 
 	/**
 	 * Upload an application to Cloud Foundry.
->>>>>>> 6b33707b431354f93ae58766946443b53f683d0c
 	 *
 	 * @param appName the application name
 	 * @param archive the application archive
@@ -281,17 +266,10 @@ public interface CloudFoundryOperations {
 	void uploadApplication(String appName, ApplicationArchive archive) throws IOException;
 
 	/**
-<<<<<<< HEAD
-	 * Upload an application to cloud foundry.
-	 *
-	 * @param appName  the application name
-	 * @param archive  the application archive
-=======
 	 * Upload an application to Cloud Foundry.
 	 *
 	 * @param appName the application name
 	 * @param archive the application archive
->>>>>>> 6b33707b431354f93ae58766946443b53f683d0c
 	 * @param callback a callback interface used to provide progress information or <tt>null</tt>
 	 * @throws java.io.IOException
 	 */
