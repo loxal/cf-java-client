@@ -16,16 +16,19 @@
 package org.cloudfoundry.maven;
 
 import java.io.File;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.maven.plugin.MojoExecutionException;
+
 import org.cloudfoundry.client.lib.CloudFoundryException;
 import org.cloudfoundry.client.lib.StartingInfo;
 import org.cloudfoundry.client.lib.domain.CloudApplication;
 import org.cloudfoundry.client.lib.domain.CloudService;
 import org.cloudfoundry.client.lib.domain.Staging;
+
 import org.springframework.http.HttpStatus;
 
 /**
@@ -61,16 +64,16 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 		createServices();
 
 		getLog().debug(String.format(
-			"Pushing App - Appname: %s," +
-				" Command: %s," +
-				" Env: %s," +
-				" Instances: %s," +
-				" Memory: %s," +
-				" DiskQuota: %s," +
-				" Path: %s," +
-				" Services: %s," +
-				" Uris: %s,",
-			appname, command, env, instances, memory, disk, path, serviceNames, uris));
+				"Pushing App - Appname: %s," +
+						" Command: %s," +
+						" Env: %s," +
+						" Instances: %s," +
+						" Memory: %s," +
+						" DiskQuota: %s," +
+						" Path: %s," +
+						" Services: %s," +
+						" Uris: %s,",
+				appname, command, env, instances, memory, disk, path, serviceNames, uris));
 
 		getLog().info(String.format("Creating application '%s'", appname));
 
@@ -82,7 +85,7 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 			getClient().updateApplicationEnv(appname, env);
 		} catch (CloudFoundryException e) {
 			throw new MojoExecutionException(String.format("Error while updating application env '%s'. Error message: '%s'. Description: '%s'",
-				getAppname(), e.getMessage(), e.getDescription()), e);
+					getAppname(), e.getMessage(), e.getDescription()), e);
 		}
 
 		getLog().info(String.format("Uploading '%s'", path));
@@ -91,7 +94,7 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 			uploadApplication(getClient(), path, appname);
 		} catch (CloudFoundryException e) {
 			throw new MojoExecutionException(String.format("Error while uploading application '%s'. Error message: '%s'. Description: '%s'",
-				getAppname(), e.getMessage(), e.getDescription()), e);
+					getAppname(), e.getMessage(), e.getDescription()), e);
 		}
 
 		if (instances != null) {
@@ -101,7 +104,7 @@ public class AbstractPush extends AbstractApplicationAwareCloudFoundryMojo {
 				getClient().updateApplicationInstances(appname, instances);
 			} catch (CloudFoundryException e) {
 				throw new MojoExecutionException(String.format("Error while setting number of instances for application '%s'. Error message: '%s'. Description: '%s'",
-					getAppname(), e.getMessage(), e.getDescription()), e);
+						getAppname(), e.getMessage(), e.getDescription()), e);
 			}
 		}
 
