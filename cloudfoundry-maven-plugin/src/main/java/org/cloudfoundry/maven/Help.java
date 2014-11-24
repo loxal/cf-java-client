@@ -30,9 +30,11 @@ import org.cloudfoundry.maven.common.UiUtils;
  * @author Gunnar Hillert
  * @author Stephan Oudmaijer
  * @author Scott Frederick
+ *
+ * @since 1.0.0
+ *
  * @goal help
  * @requiresProject true
- * @since 1.0.0
  */
 public class Help extends AbstractApplicationAwareCloudFoundryMojo {
 
