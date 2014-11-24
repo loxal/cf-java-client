@@ -32,31 +32,31 @@ import java.util.Map;
  */
 public class CloneEnvironment extends AbstractApplicationAwareCloudFoundryMojo {
 
-    /**
-     * A pragmatic way to modify environment variables as there is no simple cross-platform way to set env vars.
-     *
-     * @param additionalEnv environment variables from <env/> section of the plugin configuration
-     */
-    private void updateLocalEnvironment(Map<String, String> additionalEnv) {
-        try {
-            Class[] classes = Collections.class.getDeclaredClasses();
-            Map<String, String> env = System.getenv();
-            for (Class c : classes) {
-                if ("java.util.Collections$UnmodifiableMap".equals(c.getName())) {
-                    Field unmodifiableMap = c.getDeclaredField("m");
-                    unmodifiableMap.setAccessible(true);
-                    @SuppressWarnings("unchecked")
-                    Map<String, String> updatableEnv = (Map<String, String>) unmodifiableMap.get(env);
-                    updatableEnv.putAll(additionalEnv);
-                }
-            }
-        } catch (Exception e) {
-            getLog().error(e.getMessage());
-        }
-    }
+	/**
+	 * A pragmatic way to modify environment variables as there is no simple cross-platform way to set env vars.
+	 *
+	 * @param additionalEnv environment variables from <env/> section of the plugin configuration
+	 */
+	private void updateLocalEnvironment(Map<String, String> additionalEnv) {
+		try {
+			Class[] classes = Collections.class.getDeclaredClasses();
+			Map<String, String> env = System.getenv();
+			for (Class c : classes) {
+				if ("java.util.Collections$UnmodifiableMap".equals(c.getName())) {
+					Field unmodifiableMap = c.getDeclaredField("m");
+					unmodifiableMap.setAccessible(true);
+					@SuppressWarnings("unchecked")
+					Map<String, String> updatableEnv = (Map<String, String>) unmodifiableMap.get(env);
+					updatableEnv.putAll(additionalEnv);
+				}
+			}
+		} catch (Exception e) {
+			getLog().error(e.getMessage());
+		}
+	}
 
-    @Override
-    protected void doExecute() throws MojoExecutionException, MojoFailureException {
-        updateLocalEnvironment(getEnv());
-    }
+	@Override
+	protected void doExecute() throws MojoExecutionException, MojoFailureException {
+		updateLocalEnvironment(getEnv());
+	}
 }
