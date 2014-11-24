@@ -8,6 +8,7 @@ import org.cloudfoundry.client.lib.domain.CloudDomain;
 import org.cloudfoundry.client.lib.domain.CloudEntity;
 import org.cloudfoundry.client.lib.domain.CloudInfo;
 import org.cloudfoundry.client.lib.domain.CloudOrganization;
+import org.cloudfoundry.client.lib.domain.CloudQuota;
 import org.cloudfoundry.client.lib.domain.CloudRoute;
 import org.cloudfoundry.client.lib.domain.CloudService;
 import org.cloudfoundry.client.lib.domain.CloudServiceBroker;
@@ -56,9 +57,9 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestTemplate;
-import org.cloudfoundry.client.lib.domain.CloudQuota;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -892,6 +893,18 @@ public class CloudFoundryClientTest {
 
 		ApplicationStats stats = connectedClient.getApplicationStats(appName);
 		assertTrue(stats.getRecords().isEmpty());
+	}
+
+	@Test
+	public void uploadAppFromInputStream() throws IOException {
+		String appName = namespacedAppName("upload-from-input-stream");
+		createSpringApplication(appName);
+		File file = SampleProjects.springTravel();
+		FileInputStream inputStream = new FileInputStream(file);
+		connectedClient.uploadApplication(appName, appName, inputStream);
+		connectedClient.startApplication(appName);
+		CloudApplication env = connectedClient.getApplication(appName);
+		assertEquals(CloudApplication.AppState.STARTED, env.getState());
 	}
 
 	@Test
