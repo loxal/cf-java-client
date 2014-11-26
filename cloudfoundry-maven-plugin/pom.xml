@@ -4,7 +4,7 @@
 	<groupId>org.cloudfoundry</groupId>
 	<artifactId>cf-maven-plugin</artifactId>
 	<packaging>maven-plugin</packaging>
-	<version>1.3.3.KIWI-RELEASE</version>
+	<version>1.3.4.KIWI-RELEASE</version>
 	<name>Cloud Foundry Maven Plugin</name>
 	<url>https://github.com/cloudfoundry/cf-java-client/cloudfoundry-maven-plugin</url>
 

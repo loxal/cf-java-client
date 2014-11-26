@@ -666,7 +666,7 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 		int runningInstances = getRunningInstances(instances);
 		int flappingInstances = getFlappingInstances(instances);
 
-		getLog().info("Instance size: " + instances.size());
+		getLog().info("Application instances: " + instances);
 
 		if (flappingInstances > 0) {
 			throw new MojoExecutionException("Application start unsuccessful");
