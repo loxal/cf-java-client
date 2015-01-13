@@ -1,6 +1,6 @@
 package org.cloudfoundry.client.lib.util;
 
-import static org.apache.http.conn.ssl.SSLSocketFactory.STRICT_HOSTNAME_VERIFIER;
+import static org.apache.http.conn.ssl.SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER;
 
 import java.net.URL;
 import java.security.GeneralSecurityException;
@@ -12,11 +12,13 @@ import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.routing.HttpRoutePlanner;
+import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.cloudfoundry.client.lib.HttpProxyConfiguration;
 import org.cloudfoundry.client.lib.oauth2.OauthClient;
 import org.cloudfoundry.client.lib.rest.CloudControllerResponseErrorHandler;
@@ -31,7 +33,7 @@ import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.http.converter.json.MappingJacksonHttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -51,23 +53,31 @@ public class RestUtil {
 	}
 
 	public ClientHttpRequestFactory createRequestFactory(HttpProxyConfiguration httpProxyConfiguration, boolean trustSelfSignedCerts) {
-		HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
-		DefaultHttpClient httpClient = (DefaultHttpClient) requestFactory.getHttpClient();
+		HttpClientBuilder httpClientBuilder = HttpClients.custom().useSystemProperties();
 
 		if (trustSelfSignedCerts) {
-			registerSslSocketFactory(httpClient);
+			httpClientBuilder.setSslcontext(buildSslContext());
+			httpClientBuilder.setHostnameVerifier(BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
 		}
-		
+
 		if (httpProxyConfiguration != null) {
-		    	if (httpProxyConfiguration.isAuthRequired()) {
-        		    	httpClient.getCredentialsProvider().setCredentials(
-        		        	new AuthScope(httpProxyConfiguration.getProxyHost(), httpProxyConfiguration.getProxyPort()),
-        		        	new UsernamePasswordCredentials(httpProxyConfiguration.getUsername(), httpProxyConfiguration.getPassword()));
-			}
-		    
 			HttpHost proxy = new HttpHost(httpProxyConfiguration.getProxyHost(), httpProxyConfiguration.getProxyPort());
-			httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+			httpClientBuilder.setProxy(proxy);
+
+			if (httpProxyConfiguration.isAuthRequired()) {
+				BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+				credentialsProvider.setCredentials(
+						new AuthScope(httpProxyConfiguration.getProxyHost(), httpProxyConfiguration.getProxyPort()),
+						new UsernamePasswordCredentials(httpProxyConfiguration.getUsername(), httpProxyConfiguration.getPassword()));
+				httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+			}
+
+			HttpRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
+			httpClientBuilder.setRoutePlanner(routePlanner);
 		}
+
+		HttpClient httpClient = httpClientBuilder.build();
+		HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
 
 		return requestFactory;
 	}
@@ -76,12 +86,11 @@ public class RestUtil {
 		return new OauthClient(authorizationUrl, createRestTemplate(httpProxyConfiguration, trustSelfSignedCerts));
 	}
 
-	private void registerSslSocketFactory(HttpClient httpClient)  {
+	private javax.net.ssl.SSLContext buildSslContext()  {
 		try {
-			SSLSocketFactory socketFactory = new SSLSocketFactory(new TrustSelfSignedStrategy(), STRICT_HOSTNAME_VERIFIER);
-			httpClient.getConnectionManager().getSchemeRegistry().register(new Scheme("https", 443, socketFactory));
+			return new SSLContextBuilder().useSSL().loadTrustMaterial(null, new TrustSelfSignedStrategy()).build();
 		} catch (GeneralSecurityException gse) {
-			throw new RuntimeException("An error occurred setting up the SSLSocketFactory", gse);
+			throw new RuntimeException("An error occurred setting up the SSLContext", gse);
 		}
 	}
 
@@ -92,7 +101,7 @@ public class RestUtil {
 		messageConverters.add(new ResourceHttpMessageConverter());
 		messageConverters.add(new UploadApplicationPayloadHttpMessageConverter());
 		messageConverters.add(getFormHttpMessageConverter());
-		messageConverters.add(new MappingJacksonHttpMessageConverter());
+		messageConverters.add(new MappingJackson2HttpMessageConverter());
 		messageConverters.add(new LoggregatorHttpMessageConverter());
 		return messageConverters;
 	}

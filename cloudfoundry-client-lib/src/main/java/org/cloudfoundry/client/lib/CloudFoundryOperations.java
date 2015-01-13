@@ -84,6 +84,29 @@ public interface CloudFoundryOperations {
 	List<CloudSpace> getSpaces();
 
 	/**
+	 * Create a space with the specified name 
+	 * @param spaceName
+	 */
+	void createSpace(String spaceName);
+	
+	/**
+	 * Get space name with the specified name.
+	 *
+	 * @param spaceName name of the space
+	 * @return the cloud space
+	 */
+	CloudSpace getSpace(String spaceName);
+	
+	/**
+	 * Delete a space with the specified name
+	 * 
+	 * @param spaceName name of the space
+	 */
+	void deleteSpace(String spaceName);
+
+	
+	
+	/**
 	 * Get list of CloudOrganizations for the current cloud.
 	 *
 	 * @return List of CloudOrganizations objects containing the organization info
@@ -186,8 +209,6 @@ public interface CloudFoundryOperations {
 	 */
 	void createService(CloudService service);
 
-	void createUserProvidedService(CloudService service, Map<String, Object> credentials, String syslogDrainUrl);
-
 	/**
 	 * Create a user-provided service.
 	 *
@@ -195,6 +216,15 @@ public interface CloudFoundryOperations {
 	 * @param credentials the user-provided service credentials
 	 */
 	void createUserProvidedService(CloudService service, Map<String, Object> credentials);
+
+	/**
+	 * Create a user-provided service for logging.
+	 *
+	 * @param service cloud service info
+	 * @param credentials the user-provided service credentials
+	 * @param syslogDrainUrl for a logging service
+	 */
+	void createUserProvidedService(CloudService service, Map<String, Object> credentials, String syslogDrainUrl);
 
 	/**
 	 * Delete routes that do not have any application which is assigned to them.

@@ -12,7 +12,7 @@ In order to get started you must as a minimum add the **cf-maven-plugin** to you
     <plugin>
         <groupId>org.cloudfoundry</groupId>
         <artifactId>cf-maven-plugin</artifactId>
-        <version>1.0.5</version>
+        <version>1.1.0</version>
     </plugin>
 ~~~
 
@@ -28,7 +28,7 @@ Following is a typical configuration example, which uses most of the available c
             <plugin>
                 <groupId>org.cloudfoundry</groupId>
                 <artifactId>cf-maven-plugin</artifactId>
-                <version>1.0.5</version>
+                <version>1.1.0</version>
                 <configuration>
                     <server>mycloudfoundry-instance</server>
                     <target>http://api.run.pivotal.io</target>
@@ -42,6 +42,7 @@ Following is a typical configuration example, which uses most of the available c
                     <env>
                         <ENV-VAR-NAME>env-var-value</ENV-VAR-NAME>
                     </env>
+                    <mergeEnv>true</mergeEnv>
                     <services>
                         <service>
                             <name>postgres-test</name>
@@ -57,10 +58,10 @@ Following is a typical configuration example, which uses most of the available c
                             </userProvidedCredentials>
                         </service>
                         <service>
-                            <name>logger-web-console</name>
-                            <label>user-provided</label>
-                            <syslogDrainUrl>syslog://log.example.com:5000</syslogDrainUrl>
-                            <userProvidedCredentials/>
+                                <name>logger-web-console</name>
+                                <label>user-provided</label>
+                                <syslogDrainUrl>syslog://log.example.com:5000</syslogDrainUrl>
+                                <userProvidedCredentials/>
                         </service>
                     </services>
                 </configuration>
@@ -187,6 +188,7 @@ Additional certain configuration parameter will fall back to using default value
 + `healthCheckTimeout`: Defaults to Cloud Controller value
 + `path`: Defaults to *${project.build.directory}/${project.build.finalName}.war*
 + `url`: Defaults to the appname and the default domain
++ `mergeEnv`: Defaults to *false*, meaning application environment variables are overwritten by plugin configuration
 + `server`: Special parameter to tell Maven which server element in `settings.xml`
   holds the credentials for Cloud Foundry. Defaults to *cloud-foundry-credentials*
 
@@ -206,7 +208,7 @@ Plugin configuration in `pom.xml`:
     <plugin>
       <groupId>org.cloudfoundry</groupId>
       <artifactId>cf-maven-plugin</artifactId>
-      <version>1.0.2</version>
+      <version>1.1.0</version>
       <configuration>
           <server>mycloudfoundry-instance</server>
           <target>http://api.run.pivotal.io</target>
@@ -268,6 +270,15 @@ Some Cloud Foundry deployments, such as those deployed using Pivotal CF, use a s
 To instruct the Cloud Foundry Maven plugin to accept self-signed certificates from the Cloud Foundry target endpoint, add `<trustSelfSignedCerts>true</trustSelfSignedCerts>` to the plugin configuration block.
 
 # History
+
+## Changes from version 1.0.6 to 1.1.0
+
+* Updated cloudfoundry-client-lib dependency
+
+## Changes from version 1.0.5 to 1.0.6
+
+* Added the ability to specify a syslog drain URL with a user-provided service
+* Added `mergeEnv` configuration option to control whether environment variables configured in the plugins overwrite or add to existing app environment variables
 
 ## Changes from version 1.0.4 to 1.0.5
 

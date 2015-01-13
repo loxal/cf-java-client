@@ -376,22 +376,18 @@ public class CloudControllerClientImpl implements CloudControllerClient {
 			return request;
 		}
 
-		private void captureDefaultReadTimeout() {
-			if (delegate instanceof HttpComponentsClientHttpRequestFactory) {
-				HttpComponentsClientHttpRequestFactory httpRequestFactory =
-						(HttpComponentsClientHttpRequestFactory) delegate;
-				defaultSocketTimeout = (Integer) httpRequestFactory
-						.getHttpClient().getParams()
-						.getParameter("http.socket.timeout");
-				if (defaultSocketTimeout == null) {
-					try {
-						defaultSocketTimeout = new Socket().getSoTimeout();
-					} catch (SocketException e) {
-						defaultSocketTimeout = 0;
-					}
-				}
-			}
-		}
+        private void captureDefaultReadTimeout() {
+            // As of HttpClient 4.3.x, obtaining the default parameters is deprecated and removed,
+            // so we fallback to java.net.Socket.
+
+            if (defaultSocketTimeout == null) {
+                try {
+                    defaultSocketTimeout = new Socket().getSoTimeout();
+                } catch (SocketException e) {
+                    defaultSocketTimeout = 0;
+                }
+            }
+        }
 
 		public void increaseReadTimeoutForStreamedTailedLogs(int timeout) {
 			// May temporary increase read timeout on other unrelated concurrent
@@ -560,7 +556,67 @@ public class CloudControllerClientImpl implements CloudControllerClient {
 		return new CloudInfo(name, support, authorizationEndpoint, build, version, (String) userMap.get("user_name"),
 				description, limits, usage, debug, loggregatorEndpoint);
 	}
+	
+	@Override
+	public void createSpace(String spaceName) {
+		UUID orgGuid = sessionSpace.getOrganization().getMeta().getGuid();
+		UUID spaceGuid = getSpaceGuid(spaceName, orgGuid);
+		if (spaceGuid == null) {
+			doCreateSpace(spaceName, orgGuid);
+		}
+	}
 
+	@Override
+	public CloudSpace getSpace(String spaceName) {
+		String urlPath = "/v2/spaces?inline-relations-depth=1&q=name:{name}";
+		HashMap<String, Object> spaceRequest = new HashMap<String, Object>();
+		spaceRequest.put("name", spaceName);
+		List<Map<String, Object>> resourceList = getAllResources(urlPath, spaceRequest);
+		CloudSpace space = null;
+		if (resourceList.size() > 0) {
+			Map<String, Object> resource = resourceList.get(0);
+			space = resourceMapper.mapResource(resource, CloudSpace.class);
+		}
+		return space;
+	}
+
+	@Override
+	public void deleteSpace(String spaceName) {
+		UUID orgGuid = sessionSpace.getOrganization().getMeta().getGuid();
+		UUID spaceGuid = getSpaceGuid(spaceName, orgGuid);
+		if (spaceGuid != null) {
+			doDeleteSpace(spaceGuid);
+		}
+	}
+
+	private UUID doCreateSpace(String spaceName, UUID orgGuid) {
+		String urlPath = "/v2/spaces";
+		HashMap<String, Object> spaceRequest = new HashMap<String, Object>();
+		spaceRequest.put("organization_guid", orgGuid);
+		spaceRequest.put("name", spaceName);
+		String resp = getRestTemplate().postForObject(getUrl(urlPath), spaceRequest, String.class);
+		Map<String, Object> respMap = JsonUtil.convertJsonToMap(resp);
+		return resourceMapper.getGuidOfResource(respMap);
+	}
+
+	private UUID getSpaceGuid(String spaceName, UUID orgGuid) {
+		Map<String, Object> urlVars = new HashMap<String, Object>();
+		String urlPath = "/v2/organizations/{orgGuid}/spaces?inline-relations-depth=1&q=name:{name}";
+		urlVars.put("orgGuid", orgGuid);
+		urlVars.put("name", spaceName);
+		List<Map<String, Object>> resourceList = getAllResources(urlPath, urlVars);
+		UUID spaceGuid = null;
+		if (resourceList.size() > 0) {
+			Map<String, Object> resource = resourceList.get(0);
+			spaceGuid = resourceMapper.getGuidOfResource(resource);
+		}
+		return spaceGuid;
+	}
+
+	private void doDeleteSpace(UUID spaceGuid) {
+		getRestTemplate().delete(getUrl("/v2/spaces/{guid}?async=false"), spaceGuid);
+	}
+	
 	@Override
 	public List<CloudSpace> getSpaces() {
 		String urlPath = "/v2/spaces?inline-relations-depth=1";
