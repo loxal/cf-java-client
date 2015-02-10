@@ -41,6 +41,7 @@ public enum SystemProperties {
 	PASSWORD("password"),
 	PATH("path"),
 	RETAIN_NUMBER_OF_BUILDS("retainNumberOfBuilds"),
+	STOP_NON_PRIMARY_APPS("stopNonPrimaryApps"),
 	SETTINGS_SERVER("server", "server"),
 	SPACE("space"),
 	STACK("stack"),

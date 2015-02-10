@@ -32,6 +32,7 @@ package org.cloudfoundry.maven.common;
 public final class DefaultConstants {
 
 	public static final String MAVEN_DEFAULT_SERVER = "cloud-foundry-credentials";
+	public static final Boolean STOP_NON_PRIMARY_APPS = Boolean.FALSE;
 	public static final Boolean NO_START = Boolean.FALSE;
 	public static final Boolean MERGE_ENV = Boolean.FALSE;
 	public static final Integer DEFAULT_INSTANCE = 1;

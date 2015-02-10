@@ -86,6 +86,12 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 	 */
 	private Integer retainNumberOfBuilds;
 	/**
+	 * Stops all previously deployed builds of an app.
+	 *
+	 * @parameter expression="${cf.stopNonPrimaryApps}"
+	 */
+	private Boolean stopNonPrimaryApps;
+	/**
 	 * The application ID prefix to take into account when getting distinct builds of the same application.
 	 *
 	 * @parameter expression="${cf.appIdPrefix}" default-value="${project.artifactId}"
@@ -233,6 +239,10 @@ abstract class AbstractApplicationAwareCloudFoundryMojo extends AbstractCloudFou
 	public Integer getNumberOfBuildsToRetain() {
 		final String property = getCommandlineProperty(SystemProperties.RETAIN_NUMBER_OF_BUILDS);
 		return property == null ? this.retainNumberOfBuilds : Integer.valueOf(property);
+	}
+
+	public Boolean getStopNonPrimaryApps() {
+		return getBooleanValue(SystemProperties.STOP_NON_PRIMARY_APPS, this.stopNonPrimaryApps, DefaultConstants.STOP_NON_PRIMARY_APPS);
 	}
 
 	public String getAppIdPrefix() {

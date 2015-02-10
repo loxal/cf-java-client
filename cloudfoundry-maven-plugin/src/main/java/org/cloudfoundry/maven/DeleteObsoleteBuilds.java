@@ -61,6 +61,18 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
 
 		deleteObsoleteBuilds(buildNumbers, appBuildsAssignment);
 		removePrimaryUrlFromRetiredBuilds(buildNumbers, appBuildsAssignment); // should be called before deleteObsoleteBuilds
+
+		if (getStopNonPrimaryApps()) {
+			stopAllNonPrimaryApps(appBuilds, buildNumbers);
+		}
+	}
+
+	private void stopAllNonPrimaryApps(List<CloudApplication> appBuilds, List<Integer> buildNumbers) {
+		Collections.sort(buildNumbers);
+		for (int idx = 0; idx < appBuilds.size() - 1; idx++) {
+			getClient().stopApplication(appBuilds.get(idx).getName());
+			getLog().info("Stopping app (if not already stopped)… " + appBuilds.get(idx).getName());
+		}
 	}
 
 	private void reverseSortBuildNumbers(List<Integer> buildNumbers) {
