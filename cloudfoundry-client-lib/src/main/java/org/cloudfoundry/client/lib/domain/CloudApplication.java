@@ -30,11 +30,12 @@ import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
 @JsonAutoDetect(fieldVisibility = Visibility.ANY, getterVisibility = Visibility.NONE, creatorVisibility = Visibility.NONE)
 public class CloudApplication extends CloudEntity {
 
-    private static final String COMMAND_KEY = "command";
-    private static final String BUILDPACK_URL_KEY = "buildpack";    
-    private static final String MEMORY_KEY = "memory";
-    private static final String DISK_KEY = "disk_quota";
+	private static final String COMMAND_KEY = "command";
+	private static final String BUILDPACK_URL_KEY = "buildpack";
+	private static final String MEMORY_KEY = "memory";
+	private static final String DISK_KEY = "disk_quota";
 
+	private CloudSpace space;
 	private Staging staging;
 	private int instances;
 	private int memory;
@@ -103,6 +104,14 @@ public class CloudApplication extends CloudEntity {
 			
 			setStaging(new Staging(command, buildpackUrl));
 		}
+	}
+
+	public CloudSpace getSpace() {
+		return space;
+	}
+
+	public void setSpace(CloudSpace space) {
+		this.space = space;
 	}
 
 	public enum AppState {
@@ -195,10 +204,10 @@ public class CloudApplication extends CloudEntity {
 	}
 
 	public Map<String, String> getEnvAsMap() {
-		Map<String,String> envMap = new HashMap<String, String>();
+		Map<String, String> envMap = new HashMap<String, String>();
 		for (String nameAndValue : env) {
-			String[] parts = nameAndValue.split("=");
-			envMap.put(parts[0], parts.length == 2 ? parts[1] : null);
+			String[] parts = nameAndValue.split("=", 2);
+			envMap.put(parts[0], parts.length == 2 && parts[1].length() > 0 ? parts[1] : null);
 		}
 		return envMap;
 	}
@@ -207,21 +216,12 @@ public class CloudApplication extends CloudEntity {
 		return env;
 	}
 
-	public void setEnv(Map<String, String> env) {
+	public void setEnv(Map<Object, Object> env) {
 		List<String> joined = new ArrayList<String>();
-		for (Map.Entry<String, String> entry : env.entrySet()) {
-			joined.add(entry.getKey() + '=' + entry.getValue());
+		for (Map.Entry<Object, Object> entry : env.entrySet()) {
+			joined.add(entry.getKey().toString() + '=' + entry.getValue().toString());
 		}
 		this.env = joined;
-	}
-
-	public void setEnv(List<String> env) {
-		for (String s : env) {
-			if (!s.contains("=")) {
-				throw new IllegalArgumentException("Environment setting without '=' is invalid: " + s);
-			}
-		}
-		this.env = env;
 	}
 
 	@Override
@@ -229,7 +229,7 @@ public class CloudApplication extends CloudEntity {
 		return "CloudApplication [staging=" + staging + ", instances="
 				+ instances + ", name=" + getName() 
 				+ ", memory=" + memory + ", diskQuota=" + diskQuota
-				+ ", state=" + state + ", debug=" + debug + ", uris=" + uris + ",services=" + services
-				+ ", env=" + env + "]";
+				+ ", state=" + state + ", debug=" + debug + ", uris=" + uris + ", services=" + services
+				+ ", env=" + env + ", space=" + space.getName() + "]";
 	}
 }
