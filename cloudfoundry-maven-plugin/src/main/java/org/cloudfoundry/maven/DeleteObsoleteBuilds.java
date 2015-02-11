@@ -22,7 +22,6 @@ import org.cloudfoundry.client.lib.domain.CloudApplication;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -36,8 +35,10 @@ import java.util.regex.Pattern;
 public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMojo {
 	private static final String BUILD_NUMBER_GROUP = "buildNumber";
 	private static final String APP_NAME_WITHOUT_BUILD_NUM_GROUP = "appNameWithoutBuildNumber";
-	private static final String SNAPSHOT_RELEASE_OPTION = "(-SNAPSHOT|-RELEASE)";
-	private static final String APP_NAME_INFIX_REGEX = "[\\w\\d-\\.]+" + SNAPSHOT_RELEASE_OPTION + "?-b";
+	private static final String APP_NAME_INFIX_REGEX = ".+-b";
+
+	private List<Integer> buildNumbers = new ArrayList<>();
+	private Map<Integer, CloudApplication> appBuildsAssignment = new HashMap<>();
 
 	@Override
 	protected void doExecute() throws MojoExecutionException, MojoFailureException {
@@ -49,51 +50,55 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
 	}
 
 	private void executeGoal(List<CloudApplication> appBuilds) {
-		List<Integer> buildNumbers = new LinkedList<>();
-		Map<Integer, CloudApplication> appBuildsAssignment = new HashMap<>();
 		for (CloudApplication appBuild : appBuilds) {
 			Integer buildNumber = extractBuildNumber(appBuild.getName());
 			buildNumbers.add(buildNumber);
 			appBuildsAssignment.put(buildNumber, appBuild);
 		}
 
-		reverseSortBuildNumbers(buildNumbers);
-
-		deleteObsoleteBuilds(buildNumbers, appBuildsAssignment);
-		removePrimaryUrlFromRetiredBuilds(buildNumbers, appBuildsAssignment); // should be called before deleteObsoleteBuilds
-
+		deleteObsoleteBuilds();
+		removePrimaryUrlFromRetiredBuilds();
 		if (getStopNonPrimaryApps()) {
-			stopAllNonPrimaryApps(appBuilds, buildNumbers);
+			stopAllNonPrimaryApps();
 		}
 	}
 
-	private void stopAllNonPrimaryApps(List<CloudApplication> appBuilds, List<Integer> buildNumbers) {
+	private void stopAllNonPrimaryApps() {
 		Collections.sort(buildNumbers);
-		for (int idx = 0; idx < appBuilds.size() - 1; idx++) {
-			getClient().stopApplication(appBuilds.get(idx).getName());
-			getLog().info("Stopping app (if not already stopped)… " + appBuilds.get(idx).getName());
+		for (int idx = 0; idx < buildNumbers.size() - 1; idx++) {
+			final String appToStop = appBuildsAssignment.get(buildNumbers.get(idx)).getName();
+			getClient().stopApplication(appToStop);
+			getLog().info("Stopping app (if not already stopped)… " + appToStop);
 		}
 	}
 
-	private void reverseSortBuildNumbers(List<Integer> buildNumbers) {
+	private void reverseSortBuildNumbers() {
 		Collections.sort(buildNumbers);
 		Collections.reverse(buildNumbers);
 	}
 
-	private void deleteObsoleteBuilds(List<Integer> buildNumbers, Map<Integer, CloudApplication> appBuildsMap) {
+	private void deleteObsoleteBuilds() {
+		reverseSortBuildNumbers();
 		if (getNumberOfBuildsToRetain() < buildNumbers.size()) {
 			List<Integer> buildsToDelete = buildNumbers.subList(getNumberOfBuildsToRetain(), buildNumbers.size());
 			for (Integer buildNum : buildsToDelete) {
-				deleteAppBuild(appBuildsMap.get(buildNum));
+				deleteAppBuild(appBuildsAssignment.get(buildNum));
+				updateBuildNumberToAppMapping(buildNum);
 			}
 		}
 	}
 
-	private void removePrimaryUrlFromRetiredBuilds(List<Integer> buildNumbers, Map<Integer, CloudApplication> appBuildsMap) {
+	private void updateBuildNumberToAppMapping(Integer buildNum) {
+		appBuildsAssignment.remove(buildNum);
+		buildNumbers.remove(buildNum);
+	}
+
+	private void removePrimaryUrlFromRetiredBuilds() {
+		reverseSortBuildNumbers();
 		int idxToStartUrlRemappingFrom = 1;
 		List<Integer> buildNumbersToRemap = buildNumbers.subList(idxToStartUrlRemappingFrom, buildNumbers.size());
 		for (Integer buildNum : buildNumbersToRemap) {
-			CloudApplication retiredApp = appBuildsMap.get(buildNum);
+			CloudApplication retiredApp = appBuildsAssignment.get(buildNum);
 			List<String> retiredAppUrls = retiredApp.getUris();
 			List<String> secondaryUrlsOfRetiredApp = getSecondaryUrls(retiredAppUrls);
 			updateAppUrls(retiredApp, secondaryUrlsOfRetiredApp);
@@ -114,17 +119,17 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
 	}
 
 	private void updateAppUrls(CloudApplication retiredApp, List<String> secondaryUrls) {
-		System.out.println("Update app URLs: " + retiredApp.getName());
+		getLog().info("Update app URLs: " + retiredApp.getName());
 		try {
 			// TODO might fail when application is not "started" => assure that app is "started"
 			getClient().updateApplicationUris(retiredApp.getName(), secondaryUrls);
 		} catch (Exception e) {
-			System.out.println(String.format("An error occurred updating URLs of '%s': %s. This app might not exist anymore.", retiredApp.getName(), e.getMessage()));
+			getLog().info(String.format("An error occurred updating URLs of '%s': %s. This app might not exist anymore.", retiredApp.getName(), e.getMessage()));
 		}
 	}
 
 	private void deleteAppBuild(CloudApplication appBuild) {
-		System.out.println("Delete obsolete app: " + appBuild.getName());
+		getLog().info("Delete obsolete app: " + appBuild.getName());
 		getClient().deleteApplication(appBuild.getName());
 	}
 
@@ -154,7 +159,7 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
 	}
 
 	private boolean isBuildOfApp(String someDeployedAppName) {
-		String versionAgnosticBuildRegex = "[\\w\\d-\\.]*-v)[\\d-]+" + SNAPSHOT_RELEASE_OPTION + "?-b";
+		String versionAgnosticBuildRegex = ".+-v)"+ APP_NAME_INFIX_REGEX;
 		String versionAgnosticAppNameWithoutBuildNumber = "versionAgnosticAppNameWithoutBuildNumber";
 		Pattern versionAgnosticBuild = Pattern.compile("(?<" + versionAgnosticAppNameWithoutBuildNumber + ">" + getAppIdPrefix() + versionAgnosticBuildRegex + "(?<" + BUILD_NUMBER_GROUP + ">\\d+)$");
 		Matcher ciDeployed = versionAgnosticBuild.matcher(getAppname());
