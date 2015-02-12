@@ -106,8 +106,7 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
 	}
 
 	private List<String> getSecondaryUrls(List<String> urls) {
-		// TODO check whether DeleteObsoleteBuilds#getCiDeployedAppName() could be used here
-		Pattern secondaryUrl = Pattern.compile("(?<" + APP_NAME_WITHOUT_BUILD_NUM_GROUP + ">" + getAppIdPrefix() + APP_NAME_INFIX_REGEX + ")\\d+");
+		Pattern secondaryUrl = getCiDeployedAppName();
 		List<String> secondaryUrls = new ArrayList<>();
 		for (String url : urls) {
 			Matcher ciDeployed = secondaryUrl.matcher(url);
