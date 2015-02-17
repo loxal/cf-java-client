@@ -80,7 +80,7 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
 	private void deleteObsoleteBuilds() {
 		reverseSortBuildNumbers();
 		if (getNumberOfBuildsToRetain() < buildNumbers.size()) {
-			List<Integer> buildsToDelete = buildNumbers.subList(getNumberOfBuildsToRetain(), buildNumbers.size());
+			List<Integer> buildsToDelete = new ArrayList<>(buildNumbers.subList(getNumberOfBuildsToRetain(), buildNumbers.size()));
 			for (Integer buildNum : buildsToDelete) {
 				deleteAppBuild(appBuildsAssignment.get(buildNum));
 				updateBuildNumberToAppMapping(buildNum);
@@ -96,7 +96,7 @@ public class DeleteObsoleteBuilds extends AbstractApplicationAwareCloudFoundryMo
 	private void removePrimaryUrlFromRetiredBuilds() {
 		reverseSortBuildNumbers();
 		int idxToStartUrlRemappingFrom = 1;
-		List<Integer> buildNumbersToRemap = buildNumbers.subList(idxToStartUrlRemappingFrom, buildNumbers.size());
+		List<Integer> buildNumbersToRemap = new ArrayList<>(buildNumbers.subList(idxToStartUrlRemappingFrom, buildNumbers.size()));
 		for (Integer buildNum : buildNumbersToRemap) {
 			CloudApplication retiredApp = appBuildsAssignment.get(buildNum);
 			List<String> retiredAppUrls = retiredApp.getUris();
